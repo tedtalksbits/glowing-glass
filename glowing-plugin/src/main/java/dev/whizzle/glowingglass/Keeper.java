@@ -155,13 +155,15 @@ public final class Keeper implements Listener {
     private void blowUp(Event e, float yield) {
         List<Block> glass = exploding.remove(e);
         if (glass == null) return;
-        for (Block b : glass) {
-            Colour c = records.at(b);
-            if (c == null) continue;
-            records.remove(b);
-            b.setType(Material.AIR);
-            if (ThreadLocalRandom.current().nextFloat() < yield) b.getWorld().dropItemNaturally(centre(b), GlassItem.create(c, 1));
-        }
+        records.batch(() -> {
+            for (Block b : glass) {
+                Colour c = records.at(b);
+                if (c == null) continue;
+                records.remove(b);
+                b.setType(Material.AIR);
+                if (ThreadLocalRandom.current().nextFloat() < yield) b.getWorld().dropItemNaturally(centre(b), GlassItem.create(c, 1));
+            }
+        });
     }
 
     // ---- pistons ----
@@ -182,8 +184,10 @@ public final class Keeper implements Listener {
             if (c != null) moving.put(b, c);
         }
         if (moving.isEmpty()) return;
-        for (Block b : moving.keySet()) records.remove(b);
-        for (var m : moving.entrySet()) records.put(m.getKey().getRelative(dir), m.getValue());
+        records.batch(() -> {
+            for (Block b : moving.keySet()) records.remove(b);
+            for (var m : moving.entrySet()) records.put(m.getKey().getRelative(dir), m.getValue());
+        });
     }
 
     // ---- middle-click ----

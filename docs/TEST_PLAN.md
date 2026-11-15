@@ -1,9 +1,10 @@
 # Test plan: Glowing Glass
 
-**Slice 2 (the mod, client 0.1.0) is new and hasn't been seen on screen: screenshots please, with and without your
-shader.** Slice 1 (server side, plugin 0.1.0, tests 1-16) passed the real-Paper self-test (22 checks) but also hasn't
-been played yet. The plugin didn't change for slice 2. `/glowingglass info` (plugin) and `/glowingglassmod` (mod) show
-what each side knows.
+**New: plugin 0.2.0 + client 0.2.0 (tests 29-35):** glass sounds for every colour, and no glimpse of the carrier when
+glowing glass appears (placed by you or someone else, or coming into view). Update both (the dev loop does).
+Slice 2 (the mod, tests 17-28) ran in your game on 0.1.0, where you found the two things 0.2.0 fixes. Slice 1 (server side, tests 1-16)
+passed the real-Paper self-test (23 checks now). `/glowingglass info` (plugin) and `/glowingglassmod` (mod) show what
+each side knows.
 
 ## Setup (once, about 5 minutes)
 
@@ -48,6 +49,13 @@ what each side knows.
 | 26 | Walk far away (beyond your view distance) and back, or relog | Still glowing glass everywhere. |
 | 27 | Go to the Nether and back (or `/execute in minecraft:the_nether run tp ~ ~ ~` and back) | Still glowing glass on return. |
 | 28 | A friend **without** the mod on the same server | Sees the carriers (sea lanterns etc.), no errors. |
+| 29 | Place a yellow, green, pink and red glowing glass | Each makes the glass place sound (not a froglight's or shroomlight's). |
+| 30 | Walk on them, jump onto them from a few blocks up | Glass footsteps and landing. |
+| 31 | Mine one slowly in survival, then let it break | Glass hit sounds while mining, the glass break sound at the end. |
+| 32 | Place glowing glass quickly, a dozen in a row, watching each | It shows as glowing glass from the first frame: no sea lantern or froglight flash. |
+| 33 | A second player (or alt) places and breaks glowing glass near you | No flash on your screen either. (Their place sound may still be the carrier's: limit 11.) |
+| 34 | Fly away until the demo wall unloads, then come back; relog next to it | It comes back as glowing glass, no carrier flash. |
+| 35 | A piston pushing a row of glowing glass | Glass before and after; tell me whether the slide still flashes. |
 
 
 ## ⚠️ Known limits and decisions for you
@@ -66,12 +74,16 @@ what each side knows.
 7. **Textures are my drafts** (16 x 16, opaque) until yours arrive: drop yours into
    `fabric-client/src/main/resources/assets/glowingglass/textures/block/` with the same names
    (`glowing_<colour>_glass.png`, `clear` for plain glass) and rebuild. The draft white is nearly blank.
-8. **Nothing on screen was checked here**: the cloud workspace can't run the 26.3 client. Checked: the mod compiles,
+8. **Nothing on screen is checked here** (you check it): the cloud workspace can't run the 26.3 client. Checked: the mod compiles,
    loads in a real Fabric Loader with Fabric API (the audit loads every class), and its unit tests pass (resources:
    every colour has a texture, model and item case). Likely suspects if something looks wrong: Sodium/Iris not
    calling Fabric's model hook (everything stays a sea lantern), the shader treating our texture differently from
    the carrier's, the piston slide (test 25).
 9. **A resource pack that replaces the sea lantern, froglight or shroomlight item** (`items/<block>.json`) wins over
    the mod: glowing glass items then show that pack's look. Placed blocks are unaffected.
-10. Not checked by the self-test, only by you: everything above that needs a player (placing, breaking by hand,
+10. **Other players' place sound** comes from the server, which plays the carrier's sound before the mod hears that
+   the block is glowing glass; for the froglight and shroomlight colours you may hear their place sound when
+   someone else places one. Breaking, mining, steps and your own placing are glass. Players without the mod hear the
+   carriers' sounds (glass already for the seven sea lantern colours).
+11. Not checked by the self-test, only by you: everything above that needs a player (placing, breaking by hand,
    middle-click, the crafting table and recipe book, the composter click, rejoining) and everything on screen.

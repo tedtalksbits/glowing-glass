@@ -26,8 +26,10 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Glowing Glass client. Talks to the plugin (hello, then asks about every chunk the server sends and keeps the
- * answers, which the server updates), and draws glowing glass in place of its carrier block ({@code render/}).
+ * Glowing Glass client. Talks to the plugin (hello; from then on the server sends each chunk's glowing glass right
+ * after the chunk, and pushes changes; chunks the client had before the hello are asked about), draws glowing glass
+ * in place of its carrier block ({@code render/}), marks the player's own placements at once ({@link Prediction}) and
+ * swaps the carrier's sounds for glass ({@link Sounds}, {@code mixin/}).
  * Items need no code: the mod's {@code assets/minecraft/items/<carrier>.json} pick the glowing glass model by the
  * item's custom model data. {@code /glowingglassmod} shows what the mod knows.
  */
@@ -36,7 +38,7 @@ public final class GlowingGlassClient implements ClientModInitializer {
     public static final GlassCache GLASS = new GlassCache();
     /** From the server's welcome; 0 until it answers (or when the server doesn't have the plugin). */
     static int serverProtocol;
-    /** Chunks the client has (since joining or changing level), and those still to ask about. */
+    /** Chunks the client has (since joining or changing level), and those still to ask about (had before the welcome). */
     private static final Set<Long> LOADED = new HashSet<>();
     private static final LinkedHashSet<Long> TO_ASK = new LinkedHashSet<>();
 
@@ -58,8 +60,7 @@ public final class GlowingGlassClient implements ClientModInitializer {
         ClientLevelEvents.AFTER_CLIENT_LEVEL_CHANGE.register((client, level) -> { GLASS.clear(); LOADED.clear(); TO_ASK.clear(); });
         ClientChunkEvents.CHUNK_LOAD.register((level, chunk) -> {
             long key = new ChunkPos(chunk.getPos().x(), chunk.getPos().z()).key();
-            LOADED.add(key);
-            if (active()) TO_ASK.add(key);
+            LOADED.add(key);   // once connected, the server sends the chunk's glowing glass by itself
         });
         ClientChunkEvents.CHUNK_UNLOAD.register((level, chunk) -> {
             ChunkPos pos = new ChunkPos(chunk.getPos().x(), chunk.getPos().z());
@@ -91,6 +92,7 @@ public final class GlowingGlassClient implements ClientModInitializer {
     static void onChunk(Protocol.Chunk chunk) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || !LOADED.contains(chunk.pos().key())) return;   // gone meanwhile
+        TO_ASK.remove(chunk.pos().key());
         for (int sy : GLASS.update(chunk.pos(), chunk.glass())) level.setSectionDirtyWithNeighbors(chunk.pos().x(), sy, chunk.pos().z());
     }
 

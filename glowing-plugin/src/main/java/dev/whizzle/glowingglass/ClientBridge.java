@@ -3,6 +3,7 @@ package dev.whizzle.glowingglass;
 import dev.whizzle.glowingglass.model.ChunkGlass;
 import dev.whizzle.glowingglass.model.Protocol;
 import dev.whizzle.glowingglass.model.Protocol.ChunkPos;
+import io.papermc.paper.event.packet.PlayerChunkLoadEvent;
 import io.papermc.paper.event.packet.PlayerChunkUnloadEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
@@ -16,10 +17,12 @@ import org.bukkit.plugin.messaging.PluginMessageListener;
 import java.util.*;
 
 /**
- * Server half of the client-mod protocol (docs/PROTOCOL.md). The mod asks which blocks of a chunk are glowing glass;
- * the answer comes once, and from then on the chunk is watched: whenever its glowing glass changes (placed, broken,
- * moved by a piston, blown up) the new list is pushed. Watching stops when the server stops sending the player that
- * chunk, or the player changes world; the mod asks again when the chunk comes back.
+ * Server half of the client-mod protocol (docs/PROTOCOL.md). Once a player's mod has said hello, every chunk the
+ * server sends that player is followed at once by the chunk's glowing glass, so the mod knows before it draws the
+ * chunk; the mod can also ask about chunks (those it had before the hello). From then on the chunk is watched: when
+ * its glowing glass changes (placed, broken, moved by a piston, blown up) the new list is pushed straight away, ahead
+ * of the block changes themselves. Watching stops when the server stops sending the player that chunk, or the player
+ * changes world.
  */
 public final class ClientBridge implements PluginMessageListener, Listener {
     public static final List<String> INCOMING = Protocol.SERVERBOUND.stream().map(Protocol::channel).toList();
@@ -47,6 +50,8 @@ public final class ClientBridge implements PluginMessageListener, Listener {
         final UUID world;
         final Set<Long> watched = new HashSet<>();
         final LinkedHashSet<Long> queued = new LinkedHashSet<>();
+        /** The mod said hello with our protocol: send it chunks without being asked. */
+        boolean modded;
         long second; int messages;
         Watch(UUID world) { this.world = world; }
     }
@@ -54,7 +59,6 @@ public final class ClientBridge implements PluginMessageListener, Listener {
     private final Outbox outbox;
     private final View view;
     private final Map<UUID, Watch> watches = new HashMap<>();
-    private final Set<Records.ChunkId> dirty = new LinkedHashSet<>();
     /** The current second, for the rate limit (tests fix it). */
     java.util.function.LongSupplier clock = () -> System.currentTimeMillis() / 1000;
 
@@ -81,9 +85,10 @@ public final class ClientBridge implements PluginMessageListener, Listener {
         if (++w.messages > MESSAGES_PER_SECOND) return;
         try {
             if (channel.equals(HELLO)) {
-                Protocol.readHello(message);   // any version: the welcome tells the mod ours, and it decides
+                int version = Protocol.readHello(message);   // any version: the welcome tells the mod ours, and it decides
                 w.watched.clear();   // a fresh start (the mod reconnected or reloaded); the rate limit carries on
                 w.queued.clear();
+                w.modded = version == Protocol.VERSION;
                 outbox.send(player, WELCOME, Protocol.welcome());
             } else if (channel.equals(QUERY)) {
                 for (ChunkPos c : Protocol.readQuery(message)) if (w.queued.size() < MAX_QUEUED) w.queued.add(c.key());
@@ -99,34 +104,42 @@ public final class ClientBridge implements PluginMessageListener, Listener {
         return w;
     }
 
-    /** A chunk's glowing glass changed: its watchers get the new list on the next tick. */
-    public void changed(Records.ChunkId chunk) { dirty.add(chunk); }
+    /** A chunk's glowing glass changed: its watchers get the new list now. */
+    public void changed(Records.ChunkId id) {
+        ChunkPos pos = ChunkPos.of(id.key());
+        for (Map.Entry<UUID, Watch> e : watches.entrySet()) {
+            Watch w = e.getValue();
+            if (!w.world.equals(id.world()) || !w.watched.contains(id.key())) continue;
+            Player p = Bukkit.getPlayer(e.getKey());
+            if (p == null || !p.getWorld().getUID().equals(id.world())) continue;
+            ChunkGlass glass = view.glass(p.getWorld(), pos);
+            if (glass != null) outbox.send(p, CHUNK, Protocol.chunk(pos, glass));
+        }
+    }
 
-    /** Runs every tick: answers waiting queries, then pushes changed chunks to the mods watching them. */
+    /** Runs every tick: answers waiting queries and forgets players who left or changed world. */
     public void tick() {
-        Map<UUID, Player> online = new HashMap<>();
         for (Iterator<Map.Entry<UUID, Watch>> it = watches.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<UUID, Watch> e = it.next();
             Player p = Bukkit.getPlayer(e.getKey());
             Watch w = e.getValue();
             if (p == null || !w.world.equals(p.getWorld().getUID())) { it.remove(); continue; }
-            online.put(e.getKey(), p);
             answer(p, w);
         }
-        if (dirty.isEmpty()) return;
-        List<Records.ChunkId> changed = new ArrayList<>(dirty);
-        dirty.clear();
-        for (Records.ChunkId id : changed) {
-            for (Map.Entry<UUID, Watch> e : watches.entrySet()) {
-                Watch w = e.getValue();
-                if (!w.world.equals(id.world()) || !w.watched.contains(id.key())) continue;
-                Player p = online.get(e.getKey());
-                if (p == null) continue;
-                ChunkPos pos = ChunkPos.of(id.key());
-                ChunkGlass glass = view.glass(p.getWorld(), pos);
-                if (glass != null) outbox.send(p, CHUNK, Protocol.chunk(pos, glass));
-            }
-        }
+    }
+
+    /** The server just sent the player a chunk: a modded player gets its glowing glass right behind it. */
+    @EventHandler
+    public void onChunkSent(PlayerChunkLoadEvent e) { sent(e.getPlayer(), new ChunkPos(e.getChunk().getX(), e.getChunk().getZ())); }
+
+    void sent(Player p, ChunkPos pos) {
+        Watch w = watches.get(p.getUniqueId());
+        if (w == null || !w.modded || !w.world.equals(p.getWorld().getUID())) return;
+        ChunkGlass glass = view.glass(p.getWorld(), pos);
+        if (glass == null) return;
+        w.queued.remove(pos.key());
+        w.watched.add(pos.key());
+        outbox.send(p, CHUNK, Protocol.chunk(pos, glass));
     }
 
     /** Answers up to {@link #ANSWERS_PER_TICK} queued chunks; a chunk the player doesn't have is dropped silently. */

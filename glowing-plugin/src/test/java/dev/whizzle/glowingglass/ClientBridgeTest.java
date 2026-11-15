@@ -72,19 +72,40 @@ class ClientBridgeTest {
         assertEquals(0, bridge.watched(player));
     }
 
-    @Test void pushesChangesToWatchersOnly() {
+    @Test void pushesChangesToWatchersOnlyAndAtOnce() {
         query(player, new ChunkPos(1, 2));
         bridge.tick();
         sent.clear(); bodies.clear();
         glass.get(new ChunkPos(1, 2)).put(ChunkGlass.pack(0, 71, 0), Colour.RED);
         bridge.changed(new Records.ChunkId(world.getUID(), new ChunkPos(1, 2).key()));
+        assertEquals(1, sent.size(), "pushed straight away, not on the next tick");
+        assertEquals(player.getName(), sent.getFirst()[0]);
+        assertEquals(2, lastChunk().glass().size());
         bridge.changed(new Records.ChunkId(world.getUID(), new ChunkPos(2, 2).key()));   // nobody watches it
         bridge.tick();
         assertEquals(1, sent.size());
-        assertEquals(player.getName(), sent.getFirst()[0]);
-        assertEquals(2, lastChunk().glass().size());
-        bridge.tick();
-        assertEquals(1, sent.size(), "pushed once");
+    }
+
+    @Test void sendsEachChunkToModdedPlayersAsTheServerSendsIt() {
+        bridge.sent(player, new ChunkPos(1, 2));
+        assertTrue(sent.isEmpty(), "no hello yet: not modded");
+        bridge.onPluginMessageReceived(ClientBridge.HELLO, player, Protocol.hello());
+        sent.clear(); bodies.clear();
+        bridge.sent(player, new ChunkPos(1, 2));
+        bridge.sent(player, new ChunkPos(0, 0));
+        assertEquals(2, sent.size());
+        assertEquals(new Protocol.Chunk(new ChunkPos(1, 2), glass.get(new ChunkPos(1, 2))), Protocol.readChunk(bodies.getFirst()));
+        assertEquals(0, Protocol.readChunk(bodies.getLast()).glass().size(), "empty chunks too, so the mod needn't ask");
+        assertEquals(2, bridge.watched(player));
+        bridge.sent(other, new ChunkPos(1, 2));
+        assertEquals(2, sent.size(), "the other player has no mod");
+    }
+
+    @Test void anOldModIsNotSentChunksUnasked() {
+        bridge.onPluginMessageReceived(ClientBridge.HELLO, player, new dev.whizzle.glowingglass.model.Wire.Writer().varInt(Protocol.VERSION + 1).bytes());
+        sent.clear();
+        bridge.sent(player, new ChunkPos(1, 2));
+        assertTrue(sent.isEmpty());
     }
 
     @Test void answersAtMostSoManyPerTick() {

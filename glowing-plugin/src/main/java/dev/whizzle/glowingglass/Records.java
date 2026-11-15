@@ -43,11 +43,17 @@ public final class Records implements Listener {
     private final Map<ChunkId, ChunkGlass> chunks = new HashMap<>();
     private final Logger log;
     /** Called with the chunk after its glass changed (the client bridge pushes it to watching mods). */
-    private Consumer<ChunkId> changed = c -> { };
+    private final List<Consumer<ChunkId>> listeners = new ArrayList<>();
+    /** Inside {@link #batch}: chunks changed so far, announced once at the end. */
+    private Set<ChunkId> batched;
 
     public Records(Logger log) { this.log = log; }
 
-    public void onChange(Consumer<ChunkId> listener) { this.changed = listener; }
+    public void onChange(Consumer<ChunkId> listener) { listeners.add(listener); }
+
+    public void removeListener(Consumer<ChunkId> listener) { listeners.remove(listener); }
+
+    private void changed(ChunkId id) { for (Consumer<ChunkId> l : List.copyOf(listeners)) l.accept(id); }
 
     static boolean holds(Block b, Colour c) {
         Material t = b.getType();
@@ -82,6 +88,21 @@ public final class Records implements Listener {
 
     // ---- changing ----
 
+    /**
+     * Runs {@code changes} and announces each changed chunk once at the end, not after every block (a piston moving
+     * a row of glass must not push a half-moved state to the mods).
+     */
+    public void batch(Runnable changes) {
+        if (batched != null) { changes.run(); return; }
+        batched = new LinkedHashSet<>();
+        try { changes.run(); }
+        finally {
+            Set<ChunkId> done = batched;
+            batched = null;
+            for (ChunkId id : done) changed(id);
+        }
+    }
+
     public void put(Block b, Colour c) {
         ChunkGlass g = glass(b);
         if (g == null) return;
@@ -107,7 +128,8 @@ public final class Records implements Listener {
     private void write(Block b) {
         Chunk chunk = b.getChunk();
         save(chunk, chunks.get(ChunkId.of(chunk)));
-        changed.accept(ChunkId.of(chunk));
+        if (batched != null) batched.add(ChunkId.of(chunk));
+        else changed(ChunkId.of(chunk));
     }
 
     // ---- chunk data ----

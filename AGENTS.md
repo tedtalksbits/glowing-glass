@@ -23,8 +23,11 @@ else sees the carrier.
   - `Demo`: `/glowingglass demo [kit]`.
 - `glowing-plugin/src/main/java/dev/whizzle/glowingglass/model/`: pure Java (`Colour`, `ChunkGlass`, `Protocol`,
   `Wire`), **compiled into both** the plugin and the mod (`fabric-client/build.gradle`). Change it once.
-- `fabric-client/`: Fabric client mod. Separate Gradle build. No mixins.
-  - `GlowingGlassClient`: handshake, a query per chunk the client loads (64 per tick), `/glowingglassmod`.
+- `fabric-client/`: Fabric client mod. Separate Gradle build.
+  - `GlowingGlassClient`: handshake, queries for chunks loaded before the welcome (64 per tick), `/glowingglassmod`.
+  - `Prediction`: the player's own placement is marked in the cache from the item before the block appears.
+  - `Sounds` + `mixin/`: glass sounds at glowing glass positions (place, break, mining hits, steps, horse steps,
+    landing), each a `@WrapOperation` on `BlockState.getSoundType()` (or `getPlaceSound`) in the vanilla method.
   - `GlassCache`: what the server said, by chunk; read from chunk-meshing threads, each chunk's map replaced whole.
   - `render/GlassModels`: one extra cube model per colour (`ExtraModelKey`), and `modifyBlockModelAfterBake` wraps
     every block state model of the five carriers in `render/GlassBlockModel`, which emits the glass cube at marked
@@ -36,14 +39,24 @@ else sees the carrier.
 
 ## Status (2026-11-14)
 
-- **Slice 2 (the mod) done, not yet seen on screen.** Client 0.1.0, plugin unchanged (0.1.0), protocol 1.
+- **Plugin 0.2.0 + client 0.2.0 (owner's two requests after trying 0.1.0), not yet seen in game.** Protocol 1
+  unchanged (any mix of versions works).
+  - Glass sounds for every colour (the froglight and shroomlight colours had their carriers' sounds).
+  - No glimpse of the carrier: the mod marks your own placements before the block appears; the server sends each
+    chunk's glowing glass right behind the chunk (`PlayerChunkLoadEvent`) and pushes changes from inside the event,
+    ahead of the block change, once per chunk per piston move or explosion (`Records.batch`).
+  - Checked here: 25 plugin unit tests, self-test 23 checks (new: a piston moving 3 announces one change), mixin
+    audit OK with the 6 mixins (and it fails if one can't apply: tried), 8 client unit tests.
+  - **Not checked: how it sounds and looks** (`docs/TEST_PLAN.md` tests 29-35).
+- **Slice 2 (the mod) done; ran in the owner's game on 0.1.0** (his findings: the sounds and a short flash of the
+  carrier, both addressed in 0.2.0). Client 0.1.0, plugin 0.1.0, protocol 1.
   - Checked here: the mod compiles against 26.3 / Fabric API 0.164.0; `ci/mixin-audit/run.sh` loads every mod class
     in a real Fabric Loader (BlockStateModel carries Fabric's `emitQuads`; GlassBlockModel overrides the five
     position-aware methods); 6 client unit tests (cache, resources) in a plain-JUnit build.
   - **Not checked: anything on screen** (no 26.3 client here), Sodium/Iris, the piston slide.
     `docs/TEST_PLAN.md` tests 17-28.
 - **Slice 1 (server side) done, not yet in a real game.** Plugin 0.1.0, protocol 1, no mod yet.
-  - Checked here: 23 unit tests (MockBukkit for unit tests only); self-test on Paper 26.3-211, 22 checks: the 16
+  - Checked here (0.1.0): 23 unit tests (MockBukkit for unit tests only); self-test on Paper 26.3-211, 22 checks: the 16
     recipes, a crafter crafting 8 blue, the vanilla-recipe guard (a probe recipe taking a sea lantern works with a
     plain one, not with glowing glass), records surviving a real chunk unload/load (and a stale one dropped on load),
     breakNaturally (sea lantern and froglight), `setblock ... destroy`, TNT with three colours, a sourceless
@@ -56,14 +69,16 @@ else sees the carrier.
 
 ## Open items
 
-1. Slices 1 and 2 need the owner's in-game check (`docs/TEST_PLAN.md`); slice 2 fixes from his screenshots.
+1. 0.2.0 needs the owner's in-game check (`docs/TEST_PLAN.md` tests 29-35); slice 1 tests 1-16 are still unplayed.
 2. Owner to say: drop without silk touch (current) or silk touch only (`docs/TEST_PLAN.md` limit 1).
 3. Unchecked: sulfur cubes (26.x) swallowing glowing glass (shroomlight is on their list).
 4. The piston slide: during its 2 ticks the moving block may render as the carrier, depending on whether the moving
-   piston renderer passes the destination position to the model (test 25). Fix only if the owner notices it.
+   piston renderer passes the destination position to the model (tests 25, 35). Fix only if the owner notices it.
 5. The owner's hand-drawn textures replace the drafts (same file names, 16 x 16, opaque).
 6. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
    1 redstone dust). Chaining is its own slice after that, if still wanted.
+7. Other players' place sound for froglight and shroomlight colours is the carrier's (the server plays it before
+   the record exists). Could be fixed by a client hook on the sound packet, or a plugin change; only if asked.
 
 ## Decisions already made (don't reopen without asking)
 
@@ -78,7 +93,10 @@ else sees the carrier.
 | Look: frosted, lit from inside; textures hand-drawn by the owner (16 x 16, opaque, `glowing_<colour>_glass.png`), drafts until his arrive | Owner |
 | Placed blocks: a model swap through Fabric's renderer API (wrap the carriers' block state models after baking, emit our cube at marked positions), not an overlay | Kickoff: an overlay would sit on the carrier; the swap keeps the block a carrier to the game, so shaders still light it as one and it stays full bright |
 | Items: override the carriers' vanilla item definitions with a `select` on custom model data, vanilla fallback | Kickoff (Shulker Styles' trick); only marked items change |
-| Client asks per chunk on `ClientChunkEvents.CHUNK_LOAD` (and all loaded chunks once the welcome arrives), forgets on unload, clears everything on a level change; a pushed chunk re-meshes only the sections whose blocks changed (`setSectionDirtyWithNeighbors`) | Kickoff protocol shape |
+| The server sends each chunk's glowing glass unasked right after the chunk (`PlayerChunkLoadEvent`) to players whose mod said hello; the client asks only about chunks it had before the welcome, forgets on unload, clears everything on a level change; a pushed chunk re-meshes only the sections whose blocks changed (`setSectionDirtyWithNeighbors`) | Owner saw the carrier flash for a moment with query-on-load (0.1.0); a pushed answer arrives before the chunk is drawn |
+| Changes are pushed from inside the event (before the block change reaches clients), a batch (piston, explosion) once per chunk | Same flash, for other players' placing and breaking |
+| The player's own placement is predicted from the item's custom model data | The game draws your placed block before any server message |
+| All colours sound like glass (place, break, mining, steps, landing) through client mixins at those call sites | Owner, 2026-11-14 |
 | Item: carrier item, PDC `glowingglass:colour`, `item_name` "Glowing Blue Glass" (clear: "Glowing Glass"), custom model data string `glowingglass:blue` | Players without the mod see a named carrier; the mod's item definitions select on the string; an anvil name doesn't remove the colour |
 | Placed blocks: one record per chunk (PDC `glowingglass:glass`, all positions and colours), in memory while loaded, written on every change | Logic Blocks keeps per-block keys; one key per chunk keeps big floors compact |
 | A record counts only while its block is its carrier (or a moving piston block); stale records are dropped on chunk load or by `verify` | Commands and world editors change blocks without events |
@@ -138,9 +156,13 @@ else sees the carrier.
 - MockBukkit: no real chunk persistence or block entities; test placed-block code in the self-test.
 - `GlassBlockModel` runs on chunk-meshing threads: only read `GlowingGlassClient.GLASS` there (a concurrent map of
   immutable per-chunk maps); never touch the level or client state.
-- The mod has no mixins. If one is ever added, from Shulker Styles: only mixins in the mixin package (else a black
-  screen; run the audit); mouse buttons are SDL-numbered (`InputConstants.MOUSE_BUTTON_*`); screen overlays from
-  `ScreenEvents.afterForeground`; the GUI font has no ✓ ✕ ≠ ≤ ≥ →.
+- Only mixins in `client/mixin/` (helpers like `Sounds` and `Prediction` live outside it), or the game fails to load
+  (black screen, Shulker Styles 0.2.0). `MixinPackageTest` checks the list; run `ci/mixin-audit/run.sh` after any
+  mixin change. The audit loads classes without initialising them (initialising Minecraft classes needs the game's
+  registries); loading is what applies mixins, and a mixin that can't apply fails the audit.
+- `BlockItem.place` runs on the integrated server too: `Prediction` only acts on the client level.
+- From Shulker Styles, for any future UI: mouse buttons are SDL-numbered (`InputConstants.MOUSE_BUTTON_*`); screen
+  overlays from `ScreenEvents.afterForeground`; the GUI font has no ✓ ✕ ≠ ≤ ≥ →.
 
 ## Cloud workspace pitfalls
 

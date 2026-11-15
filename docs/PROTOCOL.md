@@ -21,15 +21,21 @@ doesn't know. The list is the whole chunk: it replaces whatever the client knew 
 
 - The client sends `hello` once the server announces the channels. The server answers `welcome` whatever version
   the client sent; a client whose protocol differs stays quiet and draws nothing.
-- The client asks about each chunk it receives (`query`). The server answers `chunk` for each chunk it has sent that
-  player (an empty list where there's no glowing glass) and stays silent for the rest. Answers go out at up to 64
-  chunks per player per tick, so joining with a long view distance catches up within a second or so.
-- Every answered chunk stays **watched**: when its glowing glass changes (placed, broken, moved by a piston, blown
-  up, a stale record dropped) the server sends `chunk` again, once per tick at most. Watching stops, silently, when
-  the server stops sending that chunk to the player, or the player changes world or leaves; the client asks again
-  when the chunk comes back.
+- **Unasked (plugin 0.2.0):** once a client has said `hello` with the server's protocol, every chunk the server sends
+  that player is followed at once by `chunk` for it (an empty list where there's no glowing glass), so the client
+  knows before it draws the chunk.
+- The client asks (`query`) only about chunks it already had when the welcome arrived. The server answers `chunk` for
+  each chunk it has sent that player and stays silent for the rest, at up to 64 chunks per player per tick.
+- Every sent chunk stays **watched**: when its glowing glass changes (placed, broken, moved by a piston, blown up, a
+  stale record dropped) the server sends `chunk` again **straight away**, from inside the event, so it reaches the
+  client ahead of the block change itself. A piston move or an explosion sends each chunk once, after all its
+  blocks changed. Watching stops, silently, when the server stops sending that chunk to the player, or the player
+  changes world or leaves.
 - Limits per player: 40 messages per second; at most 8192 chunks waiting for an answer. Anyone may ask: which
   blocks are glowing glass is visible to every player anyway.
+- History: v1 (plugin 0.1.0, client 0.1.0): the client asked about every chunk; changes pushed on the next tick.
+  Plugin 0.2.0 and client 0.2.0 keep v1's bytes and add the unasked sends and immediate pushes; any mix of the
+  versions still works.
 - Bump `Protocol.VERSION` when any message's bytes change (one constant, shared by both sides). Release the plugin
   and the mod together then.
 

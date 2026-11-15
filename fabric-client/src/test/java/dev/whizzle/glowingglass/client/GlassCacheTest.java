@@ -45,4 +45,18 @@ class GlassCacheTest {
         c.clear();
         assertEquals(0, c.size());
     }
+
+    @Test void markAndUnmarkTheOwnPlacement() {
+        GlassCache c = new GlassCache();
+        c.update(new ChunkPos(0, 0), glass(ChunkGlass.pack(0, 0, 0), Colour.LIME));
+        c.mark(1, 0, 0, Colour.RED);
+        assertEquals(Colour.RED, c.at(1, 0, 0));
+        assertEquals(Colour.LIME, c.at(0, 0, 0), "the rest of the chunk stays");
+        c.unmark(1, 0, 0, Colour.BLUE);
+        assertEquals(Colour.RED, c.at(1, 0, 0), "only takes back its own mark");
+        c.unmark(1, 0, 0, Colour.RED);
+        assertNull(c.at(1, 0, 0));
+        c.mark(-20, 5, -20, Colour.CLEAR);
+        assertEquals(Set.of(), c.update(new ChunkPos(-2, -2), glass(ChunkGlass.pack(12, 5, 12), Colour.CLEAR)), "the server confirms the mark: nothing to re-mesh");
+    }
 }

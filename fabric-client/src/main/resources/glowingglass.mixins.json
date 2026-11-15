@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"package": "dev.whizzle.glowingglass.client.mixin",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"AbstractHorseMixin",
+		"BlockItemMixin",
+		"ClientLevelMixin",
+		"EntityMixin",
+		"LevelEventHandlerMixin",
+		"LivingEntityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

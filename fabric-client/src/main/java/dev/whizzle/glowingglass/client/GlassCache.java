@@ -34,6 +34,26 @@ public final class GlassCache {
         return sections;
     }
 
+    /** Marks one block (the player's own placement, before the server confirms it). */
+    public void mark(int x, int y, int z, Colour c) {
+        chunks.compute(new ChunkPos(x >> 4, z >> 4).key(), (k, old) -> {
+            Map<Integer, Colour> m = old == null ? new HashMap<>() : new HashMap<>(old);
+            m.put(ChunkGlass.pack(x & 15, y, z & 15), c);
+            return Map.copyOf(m);
+        });
+    }
+
+    /** Takes a {@link #mark} back if it's still there. */
+    public void unmark(int x, int y, int z, Colour c) {
+        chunks.computeIfPresent(new ChunkPos(x >> 4, z >> 4).key(), (k, old) -> {
+            int p = ChunkGlass.pack(x & 15, y, z & 15);
+            if (old.get(p) != c) return old;
+            Map<Integer, Colour> m = new HashMap<>(old);
+            m.remove(p);
+            return m.isEmpty() ? null : Map.copyOf(m);
+        });
+    }
+
     public void forget(ChunkPos pos) { chunks.remove(pos.key()); }
 
     public void clear() { chunks.clear(); }

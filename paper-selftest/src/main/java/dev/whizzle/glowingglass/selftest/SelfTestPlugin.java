@@ -282,6 +282,20 @@ public final class SelfTestPlugin extends JavaPlugin {
             recordIs(at(p + 2, 0), Colour.PURPLE), noRecord(at(p + 1, 0)))));
         steps.add(new Step("sticky piston pull: the record moves back", () -> at(p - 1, 0).setType(Material.AIR), 6,
             () -> all(recordIs(at(p + 1, 0), Colour.PURPLE), noRecord(at(p + 2, 0)))));
+        int row = 200;
+        List<Records.ChunkId> pushes = new ArrayList<>();
+        java.util.function.Consumer<Records.ChunkId> counter = pushes::add;
+        steps.add(new Step("piston pushing a row of 3: one change announced (one push to mods), not one per block", () -> {
+            piston(row, 0, Material.PISTON, BlockFace.EAST);
+            glass(row + 1, 0, Colour.BLUE);
+            glass(row + 2, 0, Colour.RED);
+            glass(row + 3, 0, Colour.LIME);
+            records.onChange(counter);
+            at(row - 1, 0).setType(Material.REDSTONE_BLOCK);
+        }, 6, () -> {
+            records.removeListener(counter);
+            return all(pushes.size() == 1 ? null : pushes.size() + " announcements", recordIs(at(row + 4, 0), Colour.LIME), recordIs(at(row + 2, 0), Colour.BLUE));
+        }));
         int border = 13 * 16 + 14;   // the block starts at x = 223 (chunk 13), ends at 224 (chunk 14)
         steps.add(new Step("piston push across a chunk border", () -> {
             piston(border, 0, Material.PISTON, BlockFace.EAST);

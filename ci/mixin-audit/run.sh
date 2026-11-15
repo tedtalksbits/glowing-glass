@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Loads the mod's classes and applies every client mixin (Fabric API's; the mod has none of its own yet) without
-# starting the game (no window, no natives needed), in a Fabric preLaunch entrypoint, then runs Mixin's audit and
+# Loads the mod's classes and applies every client mixin (the mod's and Fabric API's) without starting the
+# game (no window, no natives needed), in a Fabric preLaunch entrypoint, then runs Mixin's audit and
 # exits 0 (AUDIT RESULT OK) or 1. Catches linkage and mixin mistakes that otherwise only show up as a broken game
 # (Shulker Styles client 0.2.0: black screen). Linux/Git Bash; needs the client built.
 #   ci/mixin-audit/run.sh [extra gradle args, e.g. --offline -I init.gradle]   (GRADLE=<command> replaces ./gradlew)
