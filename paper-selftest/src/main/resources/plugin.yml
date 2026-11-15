@@ -1,0 +1,6 @@
+name: GlowingGlassSelfTest
+version: dev
+main: dev.whizzle.glowingglass.selftest.SelfTestPlugin
+api-version: '26.3'
+depend: [GlowingGlass]
+description: Development-only checks of Glowing Glass on a real Paper server.

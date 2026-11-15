@@ -1,0 +1,16 @@
+name: GlowingGlass
+version: '${version}'
+main: dev.whizzle.glowingglass.GlowingGlassPlugin
+api-version: '26.3'
+description: Coloured glass that gives off light (drawn by the Glowing Glass client mod).
+author: tedtalksbits
+commands:
+  glowingglass:
+    description: Glowing Glass help, info and demo
+    usage: /glowingglass [info | demo [kit]]
+    aliases: [glowglass]
+    permission: glowingglass.use
+permissions:
+  glowingglass.use:
+    description: Use /glowingglass.
+    default: true
