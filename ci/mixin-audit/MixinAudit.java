@@ -13,7 +13,7 @@ public class MixinAudit implements PreLaunchEntrypoint {
         String[] targets = {"net.minecraft.world.item.BlockItem", "net.minecraft.client.renderer.LevelEventHandler",
             "net.minecraft.client.multiplayer.ClientLevel", "net.minecraft.world.entity.Entity",
             "net.minecraft.world.entity.LivingEntity", "net.minecraft.world.entity.animal.equine.AbstractHorse",
-            "net.minecraft.client.renderer.blockentity.PistonHeadRenderer", "net.minecraft.client.renderer.block.MovingBlockRenderState",
+            "net.minecraft.client.renderer.blockentity.PistonHeadRenderer", "net.minecraft.client.multiplayer.ClientPacketListener", "net.minecraft.client.renderer.block.MovingBlockRenderState",
             "dev.whizzle.glowingglass.client.Sounds", "dev.whizzle.glowingglass.client.Prediction",
             "net.minecraft.client.renderer.block.dispatch.BlockStateModel",
             "net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel",

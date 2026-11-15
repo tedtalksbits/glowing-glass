@@ -39,6 +39,11 @@ else sees the carrier.
 
 ## Status (2026-11-14)
 
+- **Client 0.2.3: sounds the server plays** (another player placing or walking on glowing glass) swap froglight and
+  shroomlight sounds for glass (`ClientPacketListenerMixin` on `handleSoundEvent`, `Sounds.fromServer`). Works
+  because Paper plays the place sound after `BlockPlaceEvent` (read from the Paper jar: `ItemStack.useOn`), and the
+  plugin pushes the chunk from that event, so the record arrives first. Mixin audit OK with 9 mixins. Not yet heard
+  in game.
 - **Client 0.2.2: no carrier flash during a piston slide** (owner saw it on 0.2.1; the placement flash was fixed by
   0.2.0, his check). Vanilla draws a sliding block at its start position (`PistonHeadRenderer.createMovingBlock`),
   where the record no longer is; `PistonHeadRendererMixin` tags the moving block render state with the colour at
@@ -77,12 +82,10 @@ else sees the carrier.
 
 ## Open items
 
-1. Client 0.2.2 needs the owner's piston check (`docs/TEST_PLAN.md` test 35); slice 1 tests 1-16 are still unplayed.
+1. Client 0.2.3 needs the owner's check (`docs/TEST_PLAN.md` tests 33 and 35); slice 1 tests 1-16 are still unplayed.
 2. Unchecked: sulfur cubes (26.x) swallowing glowing glass (shroomlight is on their list).
 3. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
    1 redstone dust). Chaining is its own slice after that, if still wanted.
-4. Other players' place sound for froglight and shroomlight colours is the carrier's (the server plays it before
-   the record exists). Could be fixed by a client hook on the sound packet, or a plugin change; only if asked.
 
 ## Decisions already made (don't reopen without asking)
 
@@ -100,7 +103,7 @@ else sees the carrier.
 | The server sends each chunk's glowing glass unasked right after the chunk (`PlayerChunkLoadEvent`) to players whose mod said hello; the client asks only about chunks it had before the welcome, forgets on unload, clears everything on a level change; a pushed chunk re-meshes only the sections whose blocks changed (`setSectionDirtyWithNeighbors`) | Owner saw the carrier flash for a moment with query-on-load (0.1.0); a pushed answer arrives before the chunk is drawn |
 | Changes are pushed from inside the event (before the block change reaches clients), a batch (piston, explosion) once per chunk | Same flash, for other players' placing and breaking |
 | The player's own placement is predicted from the item's custom model data | The game draws your placed block before any server message |
-| All colours sound like glass (place, break, mining, steps, landing) through client mixins at those call sites | Owner, 2026-11-14 |
+| All colours sound like glass (place, break, mining, steps, landing) through client mixins at those call sites, and server-played sounds swapped on arrival | Owner, 2026-11-14 |
 | Item: carrier item, PDC `glowingglass:colour`, `item_name` "Glowing Blue Glass" (clear: "Glowing Glass"), custom model data string `glowingglass:blue` | Players without the mod see a named carrier; the mod's item definitions select on the string; an anvil name doesn't remove the colour |
 | Placed blocks: one record per chunk (PDC `glowingglass:glass`, all positions and colours), in memory while loaded, written on every change | Logic Blocks keeps per-block keys; one key per chunk keeps big floors compact |
 | A record counts only while its block is its carrier (or a moving piston block); stale records are dropped on chunk load or by `verify` | Commands and world editors change blocks without events |

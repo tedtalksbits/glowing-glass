@@ -6,6 +6,7 @@
 		"AbstractHorseMixin",
 		"BlockItemMixin",
 		"ClientLevelMixin",
+		"ClientPacketListenerMixin",
 		"EntityMixin",
 		"LevelEventHandlerMixin",
 		"LivingEntityMixin",

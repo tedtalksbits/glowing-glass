@@ -1,5 +1,6 @@
 # Test plan: Glowing Glass
 
+**Client 0.2.3: other players placing or walking on glowing glass sound like glass too** (test 33).
 **Client 0.2.2: no carrier flash during a piston slide** (test 35; you saw it on 0.2.1). 0.2.1 brought your
 redstone-recolor textures (tests 18-21).
 **Plugin 0.2.0 + client 0.2.0 (tests 29-35):** glass sounds for every colour, and no glimpse of the carrier when
@@ -55,7 +56,7 @@ each side knows.
 | 30 | Walk on them, jump onto them from a few blocks up | Glass footsteps and landing. |
 | 31 | Mine one slowly in survival, then let it break | Glass hit sounds while mining, the glass break sound at the end. |
 | 32 | Place glowing glass quickly, a dozen in a row, watching each | It shows as glowing glass from the first frame: no sea lantern or froglight flash. |
-| 33 | A second player (or alt) places and breaks glowing glass near you | No flash on your screen either. (Their place sound may still be the carrier's: limit 11.) |
+| 33 | A second player (or alt) places and breaks glowing glass near you | No flash on your screen either, and their placing sounds like glass (client 0.2.3). |
 | 34 | Fly away until the demo wall unloads, then come back; relog next to it | It comes back as glowing glass, no carrier flash. |
 | 35 | A piston (and a sticky piston pulling back) moving a row of glowing glass, and a slime contraption | Glowing glass the whole way, during the slide too (client 0.2.2). |
 
@@ -83,9 +84,7 @@ each side knows.
    the carrier's.
 9. **A resource pack that replaces the sea lantern, froglight or shroomlight item** (`items/<block>.json`) wins over
    the mod: glowing glass items then show that pack's look. Placed blocks are unaffected.
-10. **Other players' place sound** comes from the server, which plays the carrier's sound before the mod hears that
-   the block is glowing glass; for the froglight and shroomlight colours you may hear their place sound when
-   someone else places one. Breaking, mining, steps and your own placing are glass. Players without the mod hear the
-   carriers' sounds (glass already for the seven sea lantern colours).
+10. **Players without the mod hear the carriers' sounds**: glass for the seven sea lantern colours, froglight and
+   shroomlight sounds for the rest.
 11. Not checked by the self-test, only by you: everything above that needs a player (placing, breaking by hand,
    middle-click, the crafting table and recipe book, the composter click, rejoining) and everything on screen.
