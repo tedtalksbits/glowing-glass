@@ -1,5 +1,6 @@
 # Test plan: Glowing Glass
 
+**Plugin 0.2.1: sulfur cubes don't keep glowing glass** (test 36). Release as v0.2.1.
 **Client 0.2.4: your hand-drawn light blue, recoloured to the other 15** (tests 18-21 for the look).
 **Client 0.2.3: other players placing or walking on glowing glass sound like glass too** (test 33).
 **Client 0.2.2: no carrier flash during a piston slide** (test 35; you saw it on 0.2.1). 0.2.1 brought your
@@ -7,7 +8,7 @@ redstone-recolor textures (tests 18-21).
 **Plugin 0.2.0 + client 0.2.0 (tests 29-35):** glass sounds for every colour, and no glimpse of the carrier when
 glowing glass appears (placed by you or someone else, or coming into view). Update both (the dev loop does).
 Slice 2 (the mod, tests 17-28) ran in your game on 0.1.0, where you found the two things 0.2.0 fixes. Slice 1 (server side, tests 1-16)
-passed the real-Paper self-test (23 checks now). `/glowingglass info` (plugin) and `/glowingglassmod` (mod) show what
+passed the real-Paper self-test (25 checks now). `/glowingglass info` (plugin) and `/glowingglassmod` (mod) show what
 each side knows.
 
 ## Setup (once, about 5 minutes)
@@ -60,6 +61,7 @@ each side knows.
 | 33 | A second player (or alt) places and breaks glowing glass near you | No flash on your screen either, and their placing sounds like glass (client 0.2.3). |
 | 34 | Fly away until the demo wall unloads, then come back; relog next to it | It comes back as glowing glass, no carrier flash. |
 | 35 | A piston (and a sticky piston pulling back) moving a row of glowing glass, and a slime contraption | Glowing glass the whole way, during the slide too (client 0.2.2). |
+| 36 | Right-click a sulfur cube holding glowing glass; then drop one on the ground next to a cube | Feeding by hand does nothing (it stays in your hand). The dropped one may vanish into the cube for a moment, then pops back out and stays on the ground; the cube never shows a sea lantern or froglight inside. |
 
 
 ## ⚠️ Known limits and decisions for you
@@ -72,8 +74,9 @@ each side knows.
    glass (its record is dropped). One replaced by its own carrier (`/setblock ... sea_lantern` on a blue one) stays
    glowing glass.
 5. **Sea lanterns count for conduits**, so the seven sea-lantern colours do too. Harmless.
-6. Not checked yet: whether a **sulfur cube** (26.x) can swallow it (shroomlights are on its list; red and orange
-   might come back as their carrier, or not at all). I couldn't test it without a player.
+6. **Sulfur cubes don't keep glowing glass** (they'd show the carrier inside). Feeding by hand and by dispenser is
+   refused; one a cube picks up off the ground is spat back out the next moment (Paper fires no event before that
+   pickup), and mobs can't pick that item up again until a player does.
 7. **Textures: your hand-drawn light blue** (Aseprite), recoloured to the other 15 by
    `Claude outputs\glowing-glass\recolor\recolor.py` (client 0.2.4; the redstone-recolor set before that is still in
    `Claude outputs\glowing-glass\textures-16px\redstone-recolor\` and in git). To change them again, replace the files in

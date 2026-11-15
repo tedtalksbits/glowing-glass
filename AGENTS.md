@@ -41,6 +41,12 @@ else sees the carrier.
 
 ## Status (2026-11-14)
 
+- **Plugin 0.2.1: sulfur cubes don't keep glowing glass** (owner: a cube that swallowed one showed a sea lantern
+  inside; the item came back intact). Feeding by hand (`PlayerInteractEntityEvent`) and by dispenser
+  (`BlockDispenseEvent`, a cube in front) is refused; a cube's own ground pickup fires no event on Paper 26.3
+  (`SulfurCube.pickUpItem` skips `Mob`'s event), so `EntityEquipmentChangedEvent` spits it back out as an item mobs
+  can't pick up. Self-test 25 checks (2 new, each with a plain-carrier control). The owner's in-game checks of
+  0.2.2-0.2.4 (piston slide, other players' sounds, textures) all passed; CI green.
 - **Client 0.2.4: the owner's hand-drawn light blue texture, recoloured to the other 15** (recolor.py). Not yet
   seen in game.
 - **Client 0.2.3: sounds the server plays** (another player placing or walking on glowing glass) swap froglight and
@@ -86,9 +92,9 @@ else sees the carrier.
 
 ## Open items
 
-1. Client 0.2.3 needs the owner's check (`docs/TEST_PLAN.md` tests 33 and 35); slice 1 tests 1-16 are still unplayed.
-2. Unchecked: sulfur cubes (26.x) swallowing glowing glass (shroomlight is on their list).
-3. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
+1. Plugin 0.2.1 needs the owner's sulfur cube check (`docs/TEST_PLAN.md` test 36); then release v0.2.1 (plugin 0.2.1 +
+   client 0.2.4).
+2. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
    1 redstone dust). Chaining is its own slice after that, if still wanted.
 
 ## Decisions already made (don't reopen without asking)
@@ -118,6 +124,7 @@ else sees the carrier.
 | Middle-click: glowing glass of that colour; creative hands one out; survival with none picks nothing | Same rule as Logic Blocks |
 | No crafting recipe takes glowing glass (grids: `PrepareItemCraftEvent`; crafters: `CrafterCraftEvent`); composters refuse it | Kickoff. No 26.3 recipe takes a carrier today (the self-test lists any), the guard covers future ones |
 | Protocol: query per chunk, answered once, then the whole chunk pushed on change; answered only for chunks the server sent that player (`isChunkSent`), 64 per tick | Kickoff shape (Shulker Styles' protocol) |
+| Sulfur cubes don't keep glowing glass (refuse hand and dispenser feeding, spit out pickups) | Owner, 2026-11-14: the cube shows the carrier inside, breaking the illusion |
 | Demos only in creative | Same rule as the other projects: they hand out free items |
 | Release tag = plugin version; the client keeps its own version | Same as the other projects |
 
@@ -159,6 +166,7 @@ else sees the carrier.
   handling in `Keeper`.
 - A freshly loaded chunk won't unload at once (`unloadChunk` then succeeds a couple of seconds later, as the
   self-test does).
+- Self-test: the world is peaceful (slimes spawn on flat worlds); the sulfur cube steps switch to easy and back.
 - Self-test: slime blocks grab the stone floor (then the push is too long and fails): build slime contraptions off
   the ground. Explosions also drop the floor's cobblestone: ignore drops that aren't carrier drops.
 - Server-side copies of a shaped recipe (`Bukkit.getRecipe`) rename the shape's letters: test by shape position.

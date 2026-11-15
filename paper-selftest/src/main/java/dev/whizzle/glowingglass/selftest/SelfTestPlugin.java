@@ -16,6 +16,7 @@ import org.bukkit.*;
 import org.bukkit.block.*;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Levelled;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Item;
 import org.bukkit.entity.TNTPrimed;
 import org.bukkit.inventory.*;
@@ -335,6 +336,56 @@ public final class SelfTestPlugin extends JavaPlugin {
             ((Dispenser) disp.getState(false)).getInventory().addItem(GlassItem.create(Colour.LIGHT_GRAY, 1));
             ((Dispenser) disp.getState(false)).dispense();
         }, 4, () -> all(at(d + 1, 0).getType().isAir() ? null : "it placed a block: " + at(d + 1, 0).getType(), dropped(d + 1, 0, 3, Colour.LIGHT_GRAY))));
+        // Sulfur cubes (26.x) swallow every carrier block; glowing glass must not go in. Monsters need a difficulty.
+        int cu = 240;
+        List<org.bukkit.entity.LivingEntity> cubes = new ArrayList<>();
+        steps.add(new Step("sulfur cube: a dispenser won't feed it glowing glass (a plain sea lantern goes in)", () -> {
+            w.setDifficulty(Difficulty.EASY);
+            for (int i = 0; i < 2; i++) {
+                int z = i == 0 ? -4 : 4;
+                Block disp = w.getBlockAt(cu, Y, z);
+                disp.setType(Material.DISPENSER);
+                Directional dir = (Directional) disp.getBlockData();
+                dir.setFacing(BlockFace.EAST);
+                disp.setBlockData(dir);
+                var cube = (org.bukkit.entity.LivingEntity) w.spawnEntity(w.getBlockAt(cu + 1, Y, z).getLocation().add(0.5, 0, 0.5), EntityType.SULFUR_CUBE);
+                if (cube instanceof org.bukkit.entity.Mob mob) mob.setAI(false);
+                cube.setPersistent(true);
+                cubes.add(cube);
+                ((Dispenser) disp.getState(false)).getInventory().addItem(i == 0 ? GlassItem.create(Colour.BLUE, 1) : new ItemStack(Material.SEA_LANTERN));
+                ((Dispenser) disp.getState(false)).dispense();
+            }
+        }, 4, () -> {
+            ItemStack stillIn = ((Dispenser) w.getBlockAt(cu, Y, -4).getState(false)).getInventory().getItem(0);
+            ItemStack glassBody = cubes.get(0).getEquipment().getItem(org.bukkit.inventory.EquipmentSlot.BODY);
+            ItemStack plainBody = cubes.get(1).getEquipment().getItem(org.bukkit.inventory.EquipmentSlot.BODY);
+            String control = plainBody.getType() == Material.SEA_LANTERN ? null : "the plain sea lantern didn't go in either (" + plainBody.getType() + "): test can't tell";
+            return all(control, glassBody.getType().isAir() ? null : "the cube swallowed " + glassBody.getType(),
+                GlassItem.colour(stillIn) == Colour.BLUE ? null : "the dispenser now holds " + stillIn);
+        }));
+        steps.add(new Step("sulfur cube: glowing glass it picks up off the ground is spat back out (a plain shroomlight stays in)", () -> {
+            for (var cube : cubes) {
+                cube.getEquipment().setItem(org.bukkit.inventory.EquipmentSlot.BODY, null);
+                if (cube instanceof org.bukkit.entity.Mob mob) mob.setAI(true);
+                cube.setCanPickupItems(true);
+            }
+            clearItems(cu + 1, -4);
+            clearItems(cu + 1, 4);
+            w.dropItem(cubes.get(0).getLocation(), GlassItem.create(Colour.RED, 1)).setPickupDelay(0);
+            w.dropItem(cubes.get(1).getLocation(), new ItemStack(Material.SHROOMLIGHT)).setPickupDelay(0);
+        }, 60, () -> {
+            ItemStack glassBody = cubes.get(0).getEquipment().getItem(org.bukkit.inventory.EquipmentSlot.BODY);
+            ItemStack plainBody = cubes.get(1).getEquipment().getItem(org.bukkit.inventory.EquipmentSlot.BODY);
+            List<Item> loose = new ArrayList<>(w.getNearbyEntitiesByType(Item.class, cubes.get(0).getLocation(), 4));
+            Item back = loose.stream().filter(i -> GlassItem.colour(i.getItemStack()) == Colour.RED).findFirst().orElse(null);
+            for (var cube : cubes) cube.remove();
+            w.setDifficulty(Difficulty.PEACEFUL);
+            return all(plainBody.getType() == Material.SHROOMLIGHT ? null : "the control cube didn't take a plain shroomlight (" + plainBody.getType() + "): test can't tell",
+                glassBody.getType().isAir() ? null : "the cube still holds " + glassBody.getType(),
+                back != null ? null : "the glowing glass isn't on the ground near the cube: " + describe(loose),
+                back == null || !back.canMobPickup() ? null : "the spat-out item can be picked up by mobs again");
+        }));
+
         int m = 170;
         steps.add(new Step("demo: a wall of all 16, each recorded; refused when the space is taken", () -> { }, 1, () -> {
             Location feet = at(m, 0).getLocation();
