@@ -8,7 +8,9 @@
 		"ClientLevelMixin",
 		"EntityMixin",
 		"LevelEventHandlerMixin",
-		"LivingEntityMixin"
+		"LivingEntityMixin",
+		"MovingBlockRenderStateMixin",
+		"PistonHeadRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

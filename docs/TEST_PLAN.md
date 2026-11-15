@@ -1,6 +1,7 @@
 # Test plan: Glowing Glass
 
-**Client 0.2.1 uses your redstone-recolor textures** (nothing else changed): tests 18-21 for the look.
+**Client 0.2.2: no carrier flash during a piston slide** (test 35; you saw it on 0.2.1). 0.2.1 brought your
+redstone-recolor textures (tests 18-21).
 **Plugin 0.2.0 + client 0.2.0 (tests 29-35):** glass sounds for every colour, and no glimpse of the carrier when
 glowing glass appears (placed by you or someone else, or coming into view). Update both (the dev loop does).
 Slice 2 (the mod, tests 17-28) ran in your game on 0.1.0, where you found the two things 0.2.0 fixes. Slice 1 (server side, tests 1-16)
@@ -46,7 +47,7 @@ each side knows.
 | 22 | Place a glowing glass | It shows as glowing glass almost at once (a tick or two of sea lantern is possible). |
 | 23 | Break one (survival) | The cracks and breaking particles use the glass texture. |
 | 24 | Place a **plain** sea lantern, froglight and shroomlight next to the wall | They look like their normal selves. |
-| 25 | A piston pushing a glowing glass back and forth | Glowing glass before and after the move. **Watch the slide itself**: it may flash the carrier for its 2 ticks. Tell me if it's noticeable. |
+| 25 | A piston pushing a glowing glass back and forth | Glowing glass before, during and after the move. |
 | 26 | Walk far away (beyond your view distance) and back, or relog | Still glowing glass everywhere. |
 | 27 | Go to the Nether and back (or `/execute in minecraft:the_nether run tp ~ ~ ~` and back) | Still glowing glass on return. |
 | 28 | A friend **without** the mod on the same server | Sees the carriers (sea lanterns etc.), no errors. |
@@ -56,7 +57,7 @@ each side knows.
 | 32 | Place glowing glass quickly, a dozen in a row, watching each | It shows as glowing glass from the first frame: no sea lantern or froglight flash. |
 | 33 | A second player (or alt) places and breaks glowing glass near you | No flash on your screen either. (Their place sound may still be the carrier's: limit 11.) |
 | 34 | Fly away until the demo wall unloads, then come back; relog next to it | It comes back as glowing glass, no carrier flash. |
-| 35 | A piston pushing a row of glowing glass | Glass before and after; tell me whether the slide still flashes. |
+| 35 | A piston (and a sticky piston pulling back) moving a row of glowing glass, and a slime contraption | Glowing glass the whole way, during the slide too (client 0.2.2). |
 
 
 ## ⚠️ Known limits and decisions for you
@@ -79,7 +80,7 @@ each side knows.
    loads in a real Fabric Loader with Fabric API (the audit loads every class), and its unit tests pass (resources:
    every colour has a texture, model and item case). Likely suspects if something looks wrong: Sodium/Iris not
    calling Fabric's model hook (everything stays a sea lantern), the shader treating our texture differently from
-   the carrier's, the piston slide (test 25).
+   the carrier's.
 9. **A resource pack that replaces the sea lantern, froglight or shroomlight item** (`items/<block>.json`) wins over
    the mod: glowing glass items then show that pack's look. Placed blocks are unaffected.
 10. **Other players' place sound** comes from the server, which plays the carrier's sound before the mod hears that

@@ -13,6 +13,7 @@ public class MixinAudit implements PreLaunchEntrypoint {
         String[] targets = {"net.minecraft.world.item.BlockItem", "net.minecraft.client.renderer.LevelEventHandler",
             "net.minecraft.client.multiplayer.ClientLevel", "net.minecraft.world.entity.Entity",
             "net.minecraft.world.entity.LivingEntity", "net.minecraft.world.entity.animal.equine.AbstractHorse",
+            "net.minecraft.client.renderer.blockentity.PistonHeadRenderer", "net.minecraft.client.renderer.block.MovingBlockRenderState",
             "dev.whizzle.glowingglass.client.Sounds", "dev.whizzle.glowingglass.client.Prediction",
             "net.minecraft.client.renderer.block.dispatch.BlockStateModel",
             "net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel",
@@ -34,6 +35,10 @@ public class MixinAudit implements PreLaunchEntrypoint {
                 System.out.println("AUDIT GlassBlockModel overrides " + m + ": " + found);
                 if (!found) code = 1;
             }
+            Class<?> moving = Class.forName("net.minecraft.client.renderer.block.MovingBlockRenderState", false, cl);
+            Class<?> tag = Class.forName("dev.whizzle.glowingglass.client.render.MovingGlass", false, cl);
+            System.out.println("AUDIT moving block render state carries a colour: " + tag.isAssignableFrom(moving));
+            if (!tag.isAssignableFrom(moving)) code = 1;
         } catch (Throwable e) { code = 1; e.printStackTrace(System.out); }
         try { MixinEnvironment.getCurrentEnvironment().audit(); System.out.println("AUDIT mixin audit done"); }
         catch (Throwable e) { code = 1; System.out.println("AUDIT mixin audit FAILED: " + e); e.printStackTrace(System.out); }

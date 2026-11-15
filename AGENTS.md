@@ -39,10 +39,17 @@ else sees the carrier.
 
 ## Status (2026-11-14)
 
-- **Client 0.2.1: the owner's redstone-recolor textures**, nothing else changed. Not yet seen in game.
+- **Client 0.2.2: no carrier flash during a piston slide** (owner saw it on 0.2.1; the placement flash was fixed by
+  0.2.0, his check). Vanilla draws a sliding block at its start position (`PistonHeadRenderer.createMovingBlock`),
+  where the record no longer is; `PistonHeadRendererMixin` tags the moving block render state with the colour at
+  the destination (`render/MovingGlass`, added by `MovingBlockRenderStateMixin`) and `GlassBlockModel` reads it.
+  Fabric's renderer passes that render state as the level to `emitQuads` (its `MovingBlockFeatureRendererMixin`,
+  read from the jar). Mixin audit OK with 8 mixins. Not yet seen in game.
+- **Client 0.2.1: the owner's redstone-recolor textures**, nothing else changed.
 - **Plugin 0.2.0 + client 0.2.0 (owner's two requests after trying 0.1.0), not yet seen in game.** Protocol 1
   unchanged (any mix of versions works).
   - Glass sounds for every colour (the froglight and shroomlight colours had their carriers' sounds).
+  - Owner, in game: the placement flash is gone; the piston slide still flashed (fixed in client 0.2.2).
   - No glimpse of the carrier: the mod marks your own placements before the block appears; the server sends each
     chunk's glowing glass right behind the chunk (`PlayerChunkLoadEvent`) and pushes changes from inside the event,
     ahead of the block change, once per chunk per piston move or explosion (`Records.batch`).
@@ -70,13 +77,11 @@ else sees the carrier.
 
 ## Open items
 
-1. 0.2.0 needs the owner's in-game check (`docs/TEST_PLAN.md` tests 29-35); slice 1 tests 1-16 are still unplayed.
+1. Client 0.2.2 needs the owner's piston check (`docs/TEST_PLAN.md` test 35); slice 1 tests 1-16 are still unplayed.
 2. Unchecked: sulfur cubes (26.x) swallowing glowing glass (shroomlight is on their list).
-3. The piston slide: during its 2 ticks the moving block may render as the carrier, depending on whether the moving
-   piston renderer passes the destination position to the model (tests 25, 35). Fix only if the owner notices it.
-4. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
+3. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
    1 redstone dust). Chaining is its own slice after that, if still wanted.
-5. Other players' place sound for froglight and shroomlight colours is the carrier's (the server plays it before
+4. Other players' place sound for froglight and shroomlight colours is the carrier's (the server plays it before
    the record exists). Could be fixed by a client hook on the sound packet, or a plugin change; only if asked.
 
 ## Decisions already made (don't reopen without asking)

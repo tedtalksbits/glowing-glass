@@ -28,38 +28,39 @@ public final class GlassBlockModel extends WrapperBlockStateModel {
         this.glass = glass;
     }
 
-    private BlockStateModel at(BlockPos pos) {
-        Colour c = GlowingGlassClient.GLASS.at(pos.getX(), pos.getY(), pos.getZ());
+    /** The glass cube to draw instead of the carrier, or null. A block sliding under a piston carries its colour. */
+    private BlockStateModel at(BlockAndTintGetter level, BlockPos pos) {
+        Colour c = level instanceof MovingGlass moving ? moving.glowingglass$colour() : GlowingGlassClient.GLASS.at(pos.getX(), pos.getY(), pos.getZ());
         return c == null ? null : glass.apply(c);
     }
 
     @Override
     public void emitQuads(QuadEmitter emitter, BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, Predicate<Direction> cullTest) {
-        BlockStateModel g = at(pos);
+        BlockStateModel g = at(level, pos);
         if (g != null) g.emitQuads(emitter, level, pos, state, random, cullTest);
         else super.emitQuads(emitter, level, pos, state, random, cullTest);
     }
 
     @Override
     public Object createGeometryKey(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random) {
-        return at(pos) != null ? null : super.createGeometryKey(level, pos, state, random);
+        return at(level, pos) != null ? null : super.createGeometryKey(level, pos, state, random);
     }
 
     @Override
     public Material.Baked particleMaterial(BlockAndTintGetter level, BlockPos pos, BlockState state) {
-        BlockStateModel g = at(pos);
+        BlockStateModel g = at(level, pos);
         return g != null ? g.particleMaterial(level, pos, state) : super.particleMaterial(level, pos, state);
     }
 
     @Override
     public int materialFlags(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random) {
-        BlockStateModel g = at(pos);
+        BlockStateModel g = at(level, pos);
         return g != null ? g.materialFlags(level, pos, state, random) : super.materialFlags(level, pos, state, random);
     }
 
     @Override
     public boolean hasMaterialFlag(BlockAndTintGetter level, BlockPos pos, BlockState state, RandomSource random, int flag) {
-        BlockStateModel g = at(pos);
+        BlockStateModel g = at(level, pos);
         return g != null ? g.hasMaterialFlag(level, pos, state, random, flag) : super.hasMaterialFlag(level, pos, state, random, flag);
     }
 }
