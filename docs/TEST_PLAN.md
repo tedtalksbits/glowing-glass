@@ -1,5 +1,6 @@
 # Test plan: Glowing Glass
 
+**Client 0.2.4: your hand-drawn light blue, recoloured to the other 15** (tests 18-21 for the look).
 **Client 0.2.3: other players placing or walking on glowing glass sound like glass too** (test 33).
 **Client 0.2.2: no carrier flash during a piston slide** (test 35; you saw it on 0.2.1). 0.2.1 brought your
 redstone-recolor textures (tests 18-21).
@@ -73,8 +74,9 @@ each side knows.
 5. **Sea lanterns count for conduits**, so the seven sea-lantern colours do too. Harmless.
 6. Not checked yet: whether a **sulfur cube** (26.x) can swallow it (shroomlights are on its list; red and orange
    might come back as their carrier, or not at all). I couldn't test it without a player.
-7. **Textures: your "redstone-recolor" set** (client 0.2.1), from `Claude outputs\glowing-glass\textures-16px\
-   redstone-recolor\`. To change them again, replace the files in
+7. **Textures: your hand-drawn light blue** (Aseprite), recoloured to the other 15 by
+   `Claude outputs\glowing-glass\recolor\recolor.py` (client 0.2.4; the redstone-recolor set before that is still in
+   `Claude outputs\glowing-glass\textures-16px\redstone-recolor\` and in git). To change them again, replace the files in
    `fabric-client/src/main/resources/assets/glowingglass/textures/block/` (same names, 16 x 16, opaque; a unit test
    checks) and rebuild.
 8. **Nothing on screen is checked here** (you check it): the cloud workspace can't run the 26.3 client. Checked: the mod compiles,

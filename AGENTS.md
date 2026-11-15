@@ -34,11 +34,15 @@ else sees the carrier.
     positions (Fabric renderer API `emitQuads`) and the carrier's own model elsewhere.
   - Items: `assets/minecraft/items/<carrier>.json` override vanilla's with a `minecraft:select` on custom model data
     string 0 (`glowingglass:blue`), falling back to the vanilla model.
-  - Textures: `assets/glowingglass/textures/block/glowing_<colour>_glass.png` (the owner's redstone-recolor set).
+  - Textures: `assets/glowingglass/textures/block/glowing_<colour>_glass.png` (the owner's light blue + recolours).
+    To try a texture, overwrite the file: git keeps the old one (`git restore <file>` before committing,
+    `git checkout <commit> -- <file>` after). Don't leave `_old` copies in this folder: they ship in the mod jar.
 - `paper-selftest/`: development-only plugin that checks the plugin on a real Paper server.
 
 ## Status (2026-11-14)
 
+- **Client 0.2.4: the owner's hand-drawn light blue texture, recoloured to the other 15** (recolor.py). Not yet
+  seen in game.
 - **Client 0.2.3: sounds the server plays** (another player placing or walking on glowing glass) swap froglight and
   shroomlight sounds for glass (`ClientPacketListenerMixin` on `handleSoundEvent`, `Sounds.fromServer`). Works
   because Paper plays the place sound after `BlockPlaceEvent` (read from the Paper jar: `ItemStack.useOn`), and the
@@ -97,7 +101,7 @@ else sees the carrier.
 | Always on in v1; the redstone version (on a redstone lamp) is a later slice, chaining after that | Owner |
 | Carriers: white, light gray, gray, clear, cyan, light blue, blue on sea lantern; yellow and brown on ochre froglight; lime and green on verdant froglight; purple, magenta, pink on pearlescent froglight; red and orange on shroomlight | Owner, 2026-11-14 (brown on ochre froglight, not glowstone). Light colour is up to the player's shader, by block type |
 | Recipe: 8 glass of one colour around 1 glowstone dust -> 8; shaped; group `glowingglass`, building tab | Owner |
-| Textures: the owner's "redstone-recolor" set (`Claude outputs\glowing-glass\textures-16px\redstone-recolor\`), 16 x 16, opaque, `glowing_<colour>_glass.png` | Owner, 2026-11-14 (client 0.2.1); replaced the frosted drafts |
+| Textures: the owner's hand-drawn light blue; the other 15 recoloured from it by `Claude outputs\glowing-glass\recolor\recolor.py` (OKLab: each pixel keeps its lightness and chroma relative to the average, a quarter of its hue shift; averages are the vanilla dye colours; white and clear slightly off-white so the shading shows). 16 x 16, opaque, `glowing_<colour>_glass.png` | Owner, 2026-11-14 (client 0.2.4). Before: redstone-recolor set (0.2.1), frosted drafts (0.1.0); all in git |
 | Placed blocks: a model swap through Fabric's renderer API (wrap the carriers' block state models after baking, emit our cube at marked positions), not an overlay | Kickoff: an overlay would sit on the carrier; the swap keeps the block a carrier to the game, so shaders still light it as one and it stays full bright |
 | Items: override the carriers' vanilla item definitions with a `select` on custom model data, vanilla fallback | Kickoff (Shulker Styles' trick); only marked items change |
 | The server sends each chunk's glowing glass unasked right after the chunk (`PlayerChunkLoadEvent`) to players whose mod said hello; the client asks only about chunks it had before the welcome, forgets on unload, clears everything on a level change; a pushed chunk re-meshes only the sections whose blocks changed (`setSectionDirtyWithNeighbors`) | Owner saw the carrier flash for a moment with query-on-load (0.1.0); a pushed answer arrives before the chunk is drawn |
