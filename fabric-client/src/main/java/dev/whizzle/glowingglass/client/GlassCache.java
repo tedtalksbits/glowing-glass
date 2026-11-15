@@ -1,7 +1,7 @@
 package dev.whizzle.glowingglass.client;
 
 import dev.whizzle.glowingglass.model.ChunkGlass;
-import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import dev.whizzle.glowingglass.model.Protocol.ChunkPos;
 
 import java.util.*;
@@ -12,11 +12,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * ({@link #at}), written on the client thread: each chunk's map is replaced whole, never changed in place. Pure Java.
  */
 public final class GlassCache {
-    private final Map<Long, Map<Integer, Colour>> chunks = new ConcurrentHashMap<>();
+    private final Map<Long, Map<Integer, Glass>> chunks = new ConcurrentHashMap<>();
 
     /** The colour of glowing glass at a block, or null. */
-    public Colour at(int x, int y, int z) {
-        Map<Integer, Colour> c = chunks.get(new ChunkPos(x >> 4, z >> 4).key());
+    public Glass at(int x, int y, int z) {
+        Map<Integer, Glass> c = chunks.get(new ChunkPos(x >> 4, z >> 4).key());
         return c == null ? null : c.get(ChunkGlass.pack(x & 15, y, z & 15));
     }
 
@@ -25,30 +25,30 @@ public final class GlassCache {
      * need meshing again.
      */
     public Set<Integer> update(ChunkPos pos, ChunkGlass glass) {
-        Map<Integer, Colour> now = Map.copyOf(glass.entries());
-        Map<Integer, Colour> before = now.isEmpty() ? chunks.remove(pos.key()) : chunks.put(pos.key(), now);
+        Map<Integer, Glass> now = Map.copyOf(glass.entries());
+        Map<Integer, Glass> before = now.isEmpty() ? chunks.remove(pos.key()) : chunks.put(pos.key(), now);
         if (before == null) before = Map.of();
         Set<Integer> sections = new TreeSet<>();
-        for (var e : now.entrySet()) if (e.getValue() != before.get(e.getKey())) sections.add(ChunkGlass.y(e.getKey()) >> 4);
+        for (var e : now.entrySet()) if (!e.getValue().equals(before.get(e.getKey()))) sections.add(ChunkGlass.y(e.getKey()) >> 4);
         for (int p : before.keySet()) if (!now.containsKey(p)) sections.add(ChunkGlass.y(p) >> 4);
         return sections;
     }
 
     /** Marks one block (the player's own placement, before the server confirms it). */
-    public void mark(int x, int y, int z, Colour c) {
+    public void mark(int x, int y, int z, Glass c) {
         chunks.compute(new ChunkPos(x >> 4, z >> 4).key(), (k, old) -> {
-            Map<Integer, Colour> m = old == null ? new HashMap<>() : new HashMap<>(old);
+            Map<Integer, Glass> m = old == null ? new HashMap<>() : new HashMap<>(old);
             m.put(ChunkGlass.pack(x & 15, y, z & 15), c);
             return Map.copyOf(m);
         });
     }
 
     /** Takes a {@link #mark} back if it's still there. */
-    public void unmark(int x, int y, int z, Colour c) {
+    public void unmark(int x, int y, int z, Glass c) {
         chunks.computeIfPresent(new ChunkPos(x >> 4, z >> 4).key(), (k, old) -> {
             int p = ChunkGlass.pack(x & 15, y, z & 15);
-            if (old.get(p) != c) return old;
-            Map<Integer, Colour> m = new HashMap<>(old);
+            if (!c.equals(old.get(p))) return old;
+            Map<Integer, Glass> m = new HashMap<>(old);
             m.remove(p);
             return m.isEmpty() ? null : Map.copyOf(m);
         });

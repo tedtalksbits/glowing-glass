@@ -1,6 +1,6 @@
 package dev.whizzle.glowingglass;
 
-import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -28,38 +28,49 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.Recipe;
+import org.bukkit.inventory.RecipeChoice;
 import org.bukkit.inventory.ShapedRecipe;
+import org.bukkit.Keyed;
 import org.bukkit.inventory.recipe.CraftingBookCategory;
 
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * The 16 recipes (8 glass of one colour around 1 glowstone dust gives 8 glowing glass, like dyeing glass), and the
- * guards that keep glowing glass from being used as its carrier: no crafting recipe takes it (grids and crafters),
+ * The 32 recipes: 8 glass of one colour around 1 glowstone dust gives 8 glowing glass (like dyeing glass); 8 glowing
+ * glass of one colour around 1 redstone dust gives 8 redstone glowing glass. And the guards that keep glowing glass
+ * from being used as its carrier: no crafting recipe but ours takes it (grids and crafters),
  * composters refuse it (a shroomlight, red and orange's carrier, can be composted), and sulfur cubes don't keep it
  * (every carrier is on their list; the cube would show the carrier inside it, breaking the illusion): feeding by hand
  * and by dispenser is refused, and anything a cube picks up itself is spat back out.
  */
 public final class Recipes implements Listener {
-    public static NamespacedKey key(Colour c) { return new NamespacedKey("glowingglass", c.key); }
+    public static NamespacedKey key(Glass g) { return new NamespacedKey("glowingglass", g.key()); }
 
-    public static List<NamespacedKey> keys() { return Arrays.stream(Colour.values()).map(Recipes::key).toList(); }
+    public static List<NamespacedKey> keys() { return Glass.all().stream().map(Recipes::key).toList(); }
 
-    public static ShapedRecipe recipe(Colour c) {
-        ShapedRecipe r = new ShapedRecipe(key(c), GlassItem.create(c, 8));
+    public static ShapedRecipe recipe(Glass g) {
+        ShapedRecipe r = new ShapedRecipe(key(g), GlassItem.create(g, 8));
         r.shape("GGG", "GDG", "GGG");
-        r.setIngredient('G', GlassItem.glass(c));
-        r.setIngredient('D', Material.GLOWSTONE_DUST);
-        r.setGroup("glowingglass");
-        r.setCategory(CraftingBookCategory.BUILDING);
+        if (g.redstone()) {
+            // Any glowing glass of that colour, renamed ones too (an exact-item choice would need the exact name).
+            Glass from = Glass.of(g.colour(), false);
+            r.setIngredient('G', RecipeChoice.predicateChoice(i -> from.equals(GlassItem.glass(i)), GlassItem.create(from, 1)));
+            r.setIngredient('D', Material.REDSTONE);
+        } else {
+            r.setIngredient('G', GlassItem.stainedGlass(g.colour()));
+            r.setIngredient('D', Material.GLOWSTONE_DUST);
+        }
+        r.setGroup(g.redstone() ? "glowingglass_redstone" : "glowingglass");
+        r.setCategory(g.redstone() ? CraftingBookCategory.REDSTONE : CraftingBookCategory.BUILDING);
         return r;
     }
 
     public static void register() {
-        for (Colour c : Colour.values()) {
-            Bukkit.removeRecipe(key(c));
-            Bukkit.addRecipe(recipe(c));
+        for (Glass g : Glass.all()) {
+            Bukkit.removeRecipe(key(g));
+            Bukkit.addRecipe(recipe(g));
         }
     }
 
@@ -72,15 +83,17 @@ public final class Recipes implements Listener {
         return false;
     }
 
-    /** No crafting recipe takes glowing glass (none of ours does; a vanilla one would treat it as its carrier). */
+    static boolean ours(Recipe r) { return r instanceof Keyed k && k.getKey().getNamespace().equals("glowingglass"); }
+
+    /** No crafting recipe but ours takes glowing glass (a vanilla one would treat it as its carrier). */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPrepare(PrepareItemCraftEvent e) {
-        if (e.getInventory().getResult() != null && anyGlowing(e.getInventory().getMatrix())) e.getInventory().setResult(null);
+        if (e.getInventory().getResult() != null && !ours(e.getRecipe()) && anyGlowing(e.getInventory().getMatrix())) e.getInventory().setResult(null);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onCrafter(CrafterCraftEvent e) {
-        if (e.getBlock().getState(false) instanceof Crafter crafter && anyGlowing(crafter.getInventory().getContents())) e.setCancelled(true);
+        if (!ours(e.getRecipe()) && e.getBlock().getState(false) instanceof Crafter crafter && anyGlowing(crafter.getInventory().getContents())) e.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

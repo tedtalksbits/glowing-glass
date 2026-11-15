@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * A block sliding under a piston: tag its render state with the glowing glass colour at the slide's destination
+ * A block sliding under a piston: tag its render state with the glowing glass at the slide's destination
  * (the moving block entity's position), where the server already put the record.
  */
 @Mixin(PistonHeadRenderer.class)
@@ -23,6 +23,6 @@ abstract class PistonHeadRendererMixin {
     private void glowingglass$tagSlidingGlass(PistonMovingBlockEntity be, PistonHeadRenderState state, float partialTicks, Vec3 camera, ModelFeatureRenderer.CrumblingOverlay crumbling, CallbackInfo ci) {
         if (state.block == null || be.isSourcePiston()) return;
         BlockPos to = be.getBlockPos();
-        ((MovingGlass) state.block).glowingglass$setColour(GlowingGlassClient.GLASS.at(to.getX(), to.getY(), to.getZ()));
+        ((MovingGlass) state.block).glowingglass$setGlass(GlowingGlassClient.GLASS.at(to.getX(), to.getY(), to.getZ()));
     }
 }

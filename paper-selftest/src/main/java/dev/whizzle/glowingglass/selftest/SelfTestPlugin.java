@@ -7,6 +7,7 @@ import dev.whizzle.glowingglass.Recipes;
 import dev.whizzle.glowingglass.Records;
 import dev.whizzle.glowingglass.model.ChunkGlass;
 import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import dev.whizzle.glowingglass.model.Protocol;
 import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.CustomModelData;
@@ -50,10 +51,21 @@ public final class SelfTestPlugin extends JavaPlugin {
     Block at(int x, int z) { return w.getBlockAt(x, Y, z); }
 
     /** Glowing glass at (x, z), as the plugin leaves it after a player places one. */
-    Block glass(int x, int z, Colour c) {
+    static Glass on(Colour c) { return Glass.of(c, false); }
+    static Glass rs(Colour c) { return Glass.of(c, true); }
+
+    /** The colour of an always-on glowing glass item; null for anything else (redstone glass too). */
+    static Colour colourOf(ItemStack i) {
+        Glass g = GlassItem.glass(i);
+        return g == null || g.redstone() ? null : g.colour();
+    }
+
+    Block glass(int x, int z, Colour c) { return glass(x, z, on(c)); }
+
+    Block glass(int x, int z, Glass g) {
         Block b = at(x, z);
-        b.setType(GlassItem.carrier(c));
-        records.put(b, c);
+        b.setType(GlassItem.carrier(g));
+        records.put(b, g);
         return b;
     }
 
@@ -67,22 +79,24 @@ public final class SelfTestPlugin extends JavaPlugin {
     static String describe(List<Item> items) {
         return items.stream().map(i -> {
             ItemStack s = i.getItemStack();
-            Colour c = GlassItem.colour(s);
-            return s.getAmount() + " " + (c != null ? c.itemName() : s.getType().getKey().getKey());
+            Glass g = GlassItem.glass(s);
+            return s.getAmount() + " " + (g != null ? g.itemName() : s.getType().getKey().getKey());
         }).toList().toString();
     }
 
     /** Problem with the drops near (x, z), or null if they are exactly the given glowing glass (one each) and nothing else. */
-    String dropped(int x, int z, double r, Colour... expected) {
+    String dropped(int x, int z, double r, Colour... expected) { return dropped(x, z, r, java.util.Arrays.stream(expected).map(SelfTestPlugin::on).toArray(Glass[]::new)); }
+
+    String dropped(int x, int z, double r, Glass... expected) {
         List<Item> items = itemsNear(x, z, r);
-        List<Colour> got = new ArrayList<>();
+        List<String> got = new ArrayList<>();
         for (Item i : items) {
-            Colour c = GlassItem.colour(i.getItemStack());
-            if (c == null && !carrierDrop(i.getItemStack().getType())) continue;   // the floor, etc.
-            if (c == null) return "dropped " + describe(items) + ", expected only " + Arrays.toString(expected);
-            for (int n = 0; n < i.getItemStack().getAmount(); n++) got.add(c);
+            Glass g = GlassItem.glass(i.getItemStack());
+            if (g == null && !carrierDrop(i.getItemStack().getType())) continue;   // the floor, etc.
+            if (g == null) return "dropped " + describe(items) + ", expected only " + Arrays.toString(expected);
+            for (int n = 0; n < i.getItemStack().getAmount(); n++) got.add(g.key());
         }
-        List<Colour> want = new ArrayList<>(List.of(expected));
+        List<String> want = new ArrayList<>(Arrays.stream(expected).map(Glass::key).toList());
         Collections.sort(got);
         Collections.sort(want);
         return got.equals(want) ? null : "dropped " + describe(items) + ", expected " + want;
@@ -90,13 +104,15 @@ public final class SelfTestPlugin extends JavaPlugin {
 
     static boolean carrierDrop(Material m) { return m == Material.PRISMARINE_CRYSTALS || GlassItem.carriers().contains(m); }
 
-    String recordIs(Block b, Colour c) {
-        Colour now = records.at(b);
-        return now == c ? null : "record at " + b.getX() + " " + b.getY() + " " + b.getZ() + " is " + now + " (block " + b.getType() + "), expected " + c;
+    String recordIs(Block b, Colour c) { return recordIs(b, on(c)); }
+
+    String recordIs(Block b, Glass c) {
+        Glass now = records.at(b);
+        return c.equals(now) ? null : "record at " + b.getX() + " " + b.getY() + " " + b.getZ() + " is " + now + " (block " + b.getType() + "), expected " + c;
     }
 
     String noRecord(Block b) {
-        Colour r = records.recorded(b);
+        Glass r = records.recorded(b);
         return r == null ? null : "a " + r + " record is still at " + b.getX() + " " + b.getY() + " " + b.getZ() + " (block " + b.getType() + ")";
     }
 
@@ -131,14 +147,15 @@ public final class SelfTestPlugin extends JavaPlugin {
 
         // 1. Recipes and items.
         steps.add(new Step("recipes: 16, each 8 glass of one colour around 1 glowstone dust -> 8 glowing glass", () -> { }, 1, () -> {
-            for (Colour c : Colour.values()) {
-                if (!(Bukkit.getRecipe(Recipes.key(c)) instanceof ShapedRecipe r)) return "no recipe for " + c;
-                if (r.getResult().getAmount() != 8 || GlassItem.colour(r.getResult()) != c) return c + " recipe makes " + r.getResult();
+            for (Glass gl : Glass.all(false)) {
+                Colour c = gl.colour();
+                if (!(Bukkit.getRecipe(Recipes.key(gl)) instanceof ShapedRecipe r)) return "no recipe for " + c;
+                if (r.getResult().getAmount() != 8 || colourOf(r.getResult()) != c) return c + " recipe makes " + r.getResult();
                 String shape = String.join("", r.getShape());
                 if (shape.length() != 9) return c + " recipe shape " + Arrays.toString(r.getShape());
                 for (int i = 0; i < 9; i++) {
                     RecipeChoice ch = r.getChoiceMap().get(shape.charAt(i));
-                    ItemStack want = new ItemStack(i == 4 ? Material.GLOWSTONE_DUST : GlassItem.glass(c));
+                    ItemStack want = new ItemStack(i == 4 ? Material.GLOWSTONE_DUST : GlassItem.stainedGlass(c));
                     if (ch == null || !ch.test(want)) return c + " recipe slot " + i + " doesn't take " + want.getType();
                     if (i != 4 && shape.charAt(i) == shape.charAt(4)) return c + " recipe: glass and dust share a slot";
                 }
@@ -146,7 +163,7 @@ public final class SelfTestPlugin extends JavaPlugin {
             return null;
         }));
         steps.add(new Step("item: name, colour, model string; a renamed item keeps its colour", () -> { }, 1, () -> {
-            ItemStack i = GlassItem.create(Colour.LIGHT_BLUE, 1);
+            ItemStack i = GlassItem.create(on(Colour.LIGHT_BLUE), 1);
             String name = PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(i.getData(DataComponentTypes.ITEM_NAME)));
             CustomModelData cmd = i.getData(DataComponentTypes.CUSTOM_MODEL_DATA);
             ItemStack renamed = i.clone();
@@ -154,9 +171,9 @@ public final class SelfTestPlugin extends JavaPlugin {
             return all(i.getType() == Material.SEA_LANTERN ? null : "carrier " + i.getType(),
                 name.equals("Glowing Light Blue Glass") ? null : "name " + name,
                 cmd != null && cmd.strings().equals(List.of("glowingglass:light_blue")) ? null : "model data " + (cmd == null ? null : cmd.strings()),
-                GlassItem.colour(renamed) == Colour.LIGHT_BLUE ? null : "renamed item lost its colour",
-                GlassItem.colour(new ItemStack(Material.SEA_LANTERN)) == null ? null : "a plain sea lantern reads as glowing glass",
-                GlassItem.create(Colour.CLEAR, 1).getType() == Material.SEA_LANTERN ? null : "clear isn't on a sea lantern");
+                colourOf(renamed) == Colour.LIGHT_BLUE ? null : "renamed item lost its colour",
+                colourOf(new ItemStack(Material.SEA_LANTERN)) == null ? null : "a plain sea lantern reads as glowing glass",
+                GlassItem.create(on(Colour.CLEAR), 1).getType() == Material.SEA_LANTERN ? null : "clear isn't on a sea lantern");
         }));
         steps.add(new Step("vanilla: no crafting recipe takes a carrier block (INFO if one does: the guard covers it)", () -> { }, 1, () -> {
             Set<Material> carriers = GlassItem.carriers();
@@ -185,7 +202,7 @@ public final class SelfTestPlugin extends JavaPlugin {
             ShapelessRecipe r = new ShapelessRecipe(probe, new ItemStack(Material.STICK));
             r.addIngredient(Material.SEA_LANTERN);
             Bukkit.addRecipe(r);
-            crafter(g, 0).getInventory().setItem(0, GlassItem.create(Colour.BLUE, 1));
+            crafter(g, 0).getInventory().setItem(0, GlassItem.create(on(Colour.BLUE), 1));
             crafter(g + 6, 0).getInventory().setItem(0, new ItemStack(Material.SEA_LANTERN));
             at(g, -1).setType(Material.REDSTONE_BLOCK);
             at(g + 6, -1).setType(Material.REDSTONE_BLOCK);
@@ -196,7 +213,7 @@ public final class SelfTestPlugin extends JavaPlugin {
             ItemStack kept = ((Crafter) at(g, 0).getState(false)).getInventory().getItem(0);
             return all(plainWorked ? null : "the probe recipe didn't work with a plain sea lantern (test broken)",
                 out.isEmpty() ? null : "glowing glass crafted " + describe(out),
-                GlassItem.colour(kept) == Colour.BLUE ? null : "the crafter lost the glowing glass: " + kept);
+                colourOf(kept) == Colour.BLUE ? null : "the crafter lost the glowing glass: " + kept);
         }));
 
         // 2. Records: saved in the chunk, stale records ignored.
@@ -204,10 +221,10 @@ public final class SelfTestPlugin extends JavaPlugin {
         steps.add(new Step("records: (setting up a chunk to unload)", () -> {
             Block b = w.getBlockAt(px, 70, 5);
             b.setType(Material.OCHRE_FROGLIGHT);
-            records.put(b, Colour.BROWN);
+            records.put(b, on(Colour.BROWN));
             Block stale = w.getBlockAt(px + 1, 70, 5);
             stale.setType(Material.SHROOMLIGHT);
-            records.put(stale, Colour.RED);
+            records.put(stale, on(Colour.RED));
             stale.setType(Material.STONE);   // replaced without an event (like a world editor)
         }, 40, () -> null));
         steps.add(new Step("records: survive the chunk unloading and loading again; a stale one is dropped on load", () -> {
@@ -267,7 +284,7 @@ public final class SelfTestPlugin extends JavaPlugin {
         }, 4, () -> {
             List<Item> items = itemsNear(x, 0, 5);
             items.removeIf(i -> !carrierDrop(i.getItemStack().getType()));   // the floor
-            boolean onlyGlass = items.stream().allMatch(i -> GlassItem.colour(i.getItemStack()) == Colour.GREEN);
+            boolean onlyGlass = items.stream().allMatch(i -> colourOf(i.getItemStack()) == Colour.GREEN);
             long n = items.stream().mapToLong(i -> i.getItemStack().getAmount()).sum();
             return all(at(x, 0).getType().isAir() && at(x + 1, 0).getType().isAir() ? null : "glass still there",
                 onlyGlass && n <= 2 ? null : "dropped " + describe(items), noRecord(at(x, 0)), noRecord(at(x + 1, 0)));
@@ -312,10 +329,88 @@ public final class SelfTestPlugin extends JavaPlugin {
             piston.setBlockData(dir);
             w.getBlockAt(sl + 1, up, 0).setType(Material.SLIME_BLOCK);
             for (Block b : List.of(w.getBlockAt(sl + 1, up, 1), w.getBlockAt(sl + 2, up, 0))) b.setType(GlassItem.carrier(b.getZ() == 1 ? Colour.PINK : Colour.GRAY));
-            records.put(w.getBlockAt(sl + 1, up, 1), Colour.PINK);
-            records.put(w.getBlockAt(sl + 2, up, 0), Colour.GRAY);
+            records.put(w.getBlockAt(sl + 1, up, 1), on(Colour.PINK));
+            records.put(w.getBlockAt(sl + 2, up, 0), on(Colour.GRAY));
             w.getBlockAt(sl - 1, up, 0).setType(Material.REDSTONE_BLOCK);
         }, 6, () -> all(recordIs(w.getBlockAt(sl + 2, up, 1), Colour.PINK), recordIs(w.getBlockAt(sl + 3, up, 0), Colour.GRAY), noRecord(w.getBlockAt(sl + 1, up, 1)))));
+
+        // 6. Redstone glowing glass.
+        steps.add(new Step("redstone: 16 recipes, 8 glowing glass of one colour around 1 redstone dust -> 8 redstone glowing glass", () -> { }, 1, () -> {
+            for (Glass gl : Glass.all(true)) {
+                if (!(Bukkit.getRecipe(Recipes.key(gl)) instanceof ShapedRecipe r)) return "no recipe for " + gl;
+                if (r.getResult().getAmount() != 8 || !gl.equals(GlassItem.glass(r.getResult()))) return gl + " recipe makes " + r.getResult();
+                String shape = String.join("", r.getShape());
+                RecipeChoice glassChoice = r.getChoiceMap().get(shape.charAt(0)), dust = r.getChoiceMap().get(shape.charAt(4));
+                ItemStack renamed = GlassItem.create(on(gl.colour()), 1);
+                renamed.setData(DataComponentTypes.CUSTOM_NAME, Component.text("Mine"));
+                Colour other = gl.colour() == Colour.RED ? Colour.BLUE : Colour.RED;
+                if (dust == null || !dust.test(new ItemStack(Material.REDSTONE))) return gl + " recipe doesn't take redstone dust";
+                if (glassChoice == null || !glassChoice.test(GlassItem.create(on(gl.colour()), 3))) return gl + " recipe doesn't take glowing " + gl.colour().key + " glass";
+                if (!glassChoice.test(renamed)) return gl + " recipe doesn't take renamed glowing glass";
+                if (glassChoice.test(GlassItem.create(on(other), 1)) || glassChoice.test(new ItemStack(GlassItem.carrier(on(gl.colour()))))
+                    || glassChoice.test(GlassItem.create(gl, 1))) return gl + " recipe takes the wrong glass";
+            }
+            return null;
+        }));
+        int rc = 50;
+        steps.add(new Step("redstone: a crafter makes 8 redstone glowing blue glass from 8 glowing blue + redstone (the guard lets our recipe through)", () -> {
+            Crafter crafter = crafter(rc, 0);
+            for (int i = 0; i < 9; i++) crafter.getInventory().setItem(i, i == 4 ? new ItemStack(Material.REDSTONE) : GlassItem.create(on(Colour.BLUE), 1));
+            at(rc, -1).setType(Material.REDSTONE_BLOCK);
+        }, 12, () -> all(dropped(rc + 1, 0, 2.5, Collections.nCopies(8, rs(Colour.BLUE)).toArray(Glass[]::new)),
+            ((Crafter) at(rc, 0).getState(false)).getInventory().isEmpty() ? null : "the crafter still holds items")));
+        steps.add(new Step("redstone: the item is a named redstone lamp with its model string", () -> { }, 1, () -> {
+            ItemStack i = GlassItem.create(rs(Colour.CLEAR), 1);
+            String name = PlainTextComponentSerializer.plainText().serialize(Objects.requireNonNull(i.getData(DataComponentTypes.ITEM_NAME)));
+            CustomModelData cmd = i.getData(DataComponentTypes.CUSTOM_MODEL_DATA);
+            return all(i.getType() == Material.REDSTONE_LAMP ? null : "carrier " + i.getType(),
+                name.equals("Redstone Glowing Glass") ? null : "name " + name,
+                cmd != null && cmd.strings().equals(List.of("glowingglass:redstone_clear")) ? null : "model data " + (cmd == null ? null : cmd.strings()),
+                colourOf(i) == null ? null : "reads as always-on glass",
+                GlassItem.glass(new ItemStack(Material.REDSTONE_LAMP)) == null ? null : "a plain redstone lamp reads as glowing glass");
+        }));
+        int rp = 90;
+        steps.add(new Step("redstone: lights while powered, goes dark without power, stays the same glass throughout", () -> {
+            glass(rp, 0, rs(Colour.PINK));
+            at(rp - 1, 0).setType(Material.REDSTONE_BLOCK);
+        }, 4, () -> {
+            boolean litOn = at(rp, 0).getBlockData() instanceof org.bukkit.block.data.Lightable l && l.isLit();
+            at(rp - 1, 0).setType(Material.AIR);
+            return all(litOn ? null : "not lit while powered", recordIs(at(rp, 0), rs(Colour.PINK)));
+        }));
+        steps.add(new Step("redstone: (dark again 10 ticks after the power goes)", () -> { }, 10, () -> {
+            boolean lit = at(rp, 0).getBlockData() instanceof org.bukkit.block.data.Lightable l && l.isLit();
+            return all(lit ? "still lit without power" : null, recordIs(at(rp, 0), rs(Colour.PINK)));
+        }));
+        steps.add(new Step("redstone: breakNaturally drops one redstone glowing glass of that colour", () -> {
+            clearItems(rp, 0);
+            at(rp, 0).breakNaturally();
+        }, 3, () -> all(dropped(rp, 0, 2, rs(Colour.PINK)), noRecord(at(rp, 0)))));
+        int rq = 110;
+        steps.add(new Step("redstone: a piston moves it like the others (record follows; lit at a powered spot)", () -> {
+            piston(rq, 0, Material.PISTON, BlockFace.EAST);
+            glass(rq + 1, 0, rs(Colour.GREEN));
+            at(rq + 3, 0).setType(Material.REDSTONE_BLOCK);   // next to where it lands
+            at(rq - 1, 0).setType(Material.REDSTONE_BLOCK);
+        }, 8, () -> all(recordIs(at(rq + 2, 0), rs(Colour.GREEN)), noRecord(at(rq + 1, 0)),
+            at(rq + 2, 0).getBlockData() instanceof org.bukkit.block.data.Lightable l && l.isLit() ? null : "not lit next to the redstone block")));
+        int rd = 186;
+        steps.add(new Step("redstone: demo builds both copies of the 16; the top copy lit, the bottom dark", () -> { }, 1, () -> {
+            String problem = Demo.buildRedstone(at(rd, 0).getLocation(), BlockFace.SOUTH, records);
+            return problem == null ? null : "demo refused: " + problem;
+        }));
+        steps.add(new Step("redstone: (demo after the lamps settle)", () -> { }, 4, () -> {
+            Set<Colour> lit = EnumSet.noneOf(Colour.class), dark = EnumSet.noneOf(Colour.class);
+            for (int dx = -6; dx <= 6; dx++) for (int dy = 0; dy < 5; dy++) {
+                Block b = w.getBlockAt(rd + dx, Y + dy, 3);
+                Glass gl = records.at(b);
+                if (gl == null || !gl.redstone()) continue;
+                boolean on = b.getBlockData() instanceof org.bukkit.block.data.Lightable l && l.isLit();
+                (on ? lit : dark).add(gl.colour());
+                if (on != dy >= Demo.HEIGHT) return gl + " at row " + dy + " is " + (on ? "lit" : "dark");
+            }
+            return all(lit.size() == 16 ? null : "lit: " + lit, dark.size() == 16 ? null : "dark: " + dark);
+        }));
 
         // 5. Composter, dispenser, demo, protocol.
         int k = 140;
@@ -323,17 +418,17 @@ public final class SelfTestPlugin extends JavaPlugin {
             at(k, 0).setType(Material.COMPOSTER);
             Block hopper = w.getBlockAt(k, Y + 1, 0);
             hopper.setType(Material.HOPPER);
-            ((Hopper) hopper.getState(false)).getInventory().setItem(0, GlassItem.create(Colour.RED, 4));
+            ((Hopper) hopper.getState(false)).getInventory().setItem(0, GlassItem.create(on(Colour.RED), 4));
         }, 40, () -> {
             ItemStack still = ((Hopper) w.getBlockAt(k, Y + 1, 0).getState(false)).getInventory().getItem(0);
             int level = at(k, 0).getBlockData() instanceof Levelled l ? l.getLevel() : -1;
-            return all(still != null && still.getAmount() == 4 && GlassItem.colour(still) == Colour.RED ? null : "hopper now holds " + still, level == 0 ? null : "composter level " + level);
+            return all(still != null && still.getAmount() == 4 && colourOf(still) == Colour.RED ? null : "hopper now holds " + still, level == 0 ? null : "composter level " + level);
         }));
         int d = 150;
         steps.add(new Step("dispenser: dispenses glowing glass as an item that keeps its colour", () -> {
             clearItems(d + 1, 0);
             Block disp = piston(d, 0, Material.DISPENSER, BlockFace.EAST);
-            ((Dispenser) disp.getState(false)).getInventory().addItem(GlassItem.create(Colour.LIGHT_GRAY, 1));
+            ((Dispenser) disp.getState(false)).getInventory().addItem(GlassItem.create(on(Colour.LIGHT_GRAY), 1));
             ((Dispenser) disp.getState(false)).dispense();
         }, 4, () -> all(at(d + 1, 0).getType().isAir() ? null : "it placed a block: " + at(d + 1, 0).getType(), dropped(d + 1, 0, 3, Colour.LIGHT_GRAY))));
         // Sulfur cubes (26.x) swallow every carrier block; glowing glass must not go in. Monsters need a difficulty.
@@ -352,7 +447,7 @@ public final class SelfTestPlugin extends JavaPlugin {
                 if (cube instanceof org.bukkit.entity.Mob mob) mob.setAI(false);
                 cube.setPersistent(true);
                 cubes.add(cube);
-                ((Dispenser) disp.getState(false)).getInventory().addItem(i == 0 ? GlassItem.create(Colour.BLUE, 1) : new ItemStack(Material.SEA_LANTERN));
+                ((Dispenser) disp.getState(false)).getInventory().addItem(i == 0 ? GlassItem.create(on(Colour.BLUE), 1) : new ItemStack(Material.SEA_LANTERN));
                 ((Dispenser) disp.getState(false)).dispense();
             }
         }, 4, () -> {
@@ -361,7 +456,7 @@ public final class SelfTestPlugin extends JavaPlugin {
             ItemStack plainBody = cubes.get(1).getEquipment().getItem(org.bukkit.inventory.EquipmentSlot.BODY);
             String control = plainBody.getType() == Material.SEA_LANTERN ? null : "the plain sea lantern didn't go in either (" + plainBody.getType() + "): test can't tell";
             return all(control, glassBody.getType().isAir() ? null : "the cube swallowed " + glassBody.getType(),
-                GlassItem.colour(stillIn) == Colour.BLUE ? null : "the dispenser now holds " + stillIn);
+                colourOf(stillIn) == Colour.BLUE ? null : "the dispenser now holds " + stillIn);
         }));
         steps.add(new Step("sulfur cube: glowing glass it picks up off the ground is spat back out (a plain shroomlight stays in)", () -> {
             for (var cube : cubes) {
@@ -371,13 +466,13 @@ public final class SelfTestPlugin extends JavaPlugin {
             }
             clearItems(cu + 1, -4);
             clearItems(cu + 1, 4);
-            w.dropItem(cubes.get(0).getLocation(), GlassItem.create(Colour.RED, 1)).setPickupDelay(0);
+            w.dropItem(cubes.get(0).getLocation(), GlassItem.create(on(Colour.RED), 1)).setPickupDelay(0);
             w.dropItem(cubes.get(1).getLocation(), new ItemStack(Material.SHROOMLIGHT)).setPickupDelay(0);
         }, 60, () -> {
             ItemStack glassBody = cubes.get(0).getEquipment().getItem(org.bukkit.inventory.EquipmentSlot.BODY);
             ItemStack plainBody = cubes.get(1).getEquipment().getItem(org.bukkit.inventory.EquipmentSlot.BODY);
             List<Item> loose = new ArrayList<>(w.getNearbyEntitiesByType(Item.class, cubes.get(0).getLocation(), 4));
-            Item back = loose.stream().filter(i -> GlassItem.colour(i.getItemStack()) == Colour.RED).findFirst().orElse(null);
+            Item back = loose.stream().filter(i -> colourOf(i.getItemStack()) == Colour.RED).findFirst().orElse(null);
             for (var cube : cubes) cube.remove();
             w.setDifficulty(Difficulty.PEACEFUL);
             return all(plainBody.getType() == Material.SHROOMLIGHT ? null : "the control cube didn't take a plain shroomlight (" + plainBody.getType() + "): test can't tell",
@@ -393,7 +488,8 @@ public final class SelfTestPlugin extends JavaPlugin {
             if (problem != null) return "demo refused: " + problem;
             Set<Colour> seen = EnumSet.noneOf(Colour.class);
             for (int dx = -6; dx <= 6; dx++) for (int dy = 0; dy < 3; dy++) {
-                Colour c = records.at(w.getBlockAt(m + dx, Y + dy, 3));
+                Glass gl = records.at(w.getBlockAt(m + dx, Y + dy, 3));
+                Colour c = gl == null ? null : gl.colour();
                 if (c != null) seen.add(c);
             }
             return all(seen.size() == 16 ? null : "wall has " + seen, Demo.build(feet, BlockFace.SOUTH, records) != null ? null : "built a second wall over the first");
@@ -403,9 +499,9 @@ public final class SelfTestPlugin extends JavaPlugin {
             Chunk c = red.getChunk();
             ChunkGlass glass = records.chunk(w, c.getX(), c.getZ());
             Protocol.Chunk read = Protocol.readChunk(Protocol.chunk(new Protocol.ChunkPos(c.getX(), c.getZ()), glass));
-            Colour got = read.glass().get(ChunkGlass.pack(red.getX() & 15, red.getY(), red.getZ() & 15));
+            Glass got = read.glass().get(ChunkGlass.pack(red.getX() & 15, red.getY(), red.getZ() & 15));
             return all(read.glass().equals(glass) ? null : "round trip changed it", read.pos().x() == c.getX() && read.pos().z() == c.getZ() ? null : "position " + read.pos(),
-                got == Colour.RED ? null : "the wall's top-left reads " + got);
+                on(Colour.RED).equals(got) ? null : "the wall's top-left reads " + got);
         }));
 
         String only = System.getProperty("glowingglass.selftest.only", "");

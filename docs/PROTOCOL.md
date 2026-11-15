@@ -13,9 +13,11 @@ Int32, String (VarInt byte length + UTF-8). Both sides use the shared `dev.whizz
 
 **ChunkGlass**: VarInt n, then n x (Int32 position, VarInt colour id). Position inside the chunk:
 `(y << 8) | (z << 4) | x`, x and z 0-15, y the world height (negative below 0; read it back with an arithmetic
-shift). Colour ids: 0 white, 1 orange, 2 magenta, 3 light_blue, 4 yellow, 5 lime, 6 pink, 7 gray, 8 light_gray,
-9 cyan, 10 purple, 11 blue, 12 brown, 13 green, 14 red, 16 clear (15, black, is reserved). A client skips ids it
-doesn't know. The list is the whole chunk: it replaces whatever the client knew about that chunk.
+shift). Glass ids (`Glass.id`): always-on glass uses its colour id, 0 white, 1 orange, 2 magenta, 3 light_blue,
+4 yellow, 5 lime, 6 pink, 7 gray, 8 light_gray, 9 cyan, 10 purple, 11 blue, 12 brown, 13 green, 14 red, 16 clear
+(15, black, is reserved); redstone glass uses the colour id + 64 (64-78, 80; plugin 0.3.0). A client skips ids it
+doesn't know, so client 0.2.x shows redstone glass as a plain redstone lamp. Whether a redstone glass is lit isn't
+sent: it's the lamp's own block state. The list is the whole chunk: it replaces whatever the client knew about that chunk.
 
 ## Behaviour
 
@@ -41,6 +43,9 @@ doesn't know. The list is the whole chunk: it replaces whatever the client knew 
 
 ## Stored data (not on the wire)
 
-- Item: the carrier's item with persistent data `glowingglass:colour` (`blue`), the `item_name` component
-  ("Glowing Blue Glass") and a `custom_model_data` string `glowingglass:blue` for the mod's item definitions.
-- Placed blocks: the chunk's persistent data, `glowingglass:glass`, a byte array: VarInt format (1), then ChunkGlass.
+- Item: the carrier's item with persistent data `glowingglass:colour` (`blue`), plus `glowingglass:redstone` (byte 1)
+  for redstone glass (on a redstone lamp item), the `item_name` component ("Glowing Blue Glass", "Redstone Glowing
+  Blue Glass") and a `custom_model_data` string (`glowingglass:blue`, `glowingglass:redstone_blue`) for the mod's
+  item definitions.
+- Placed blocks: the chunk's persistent data, `glowingglass:glass`, a byte array: VarInt format (1), then ChunkGlass
+  (glass ids as above, so saves from plugin 0.1-0.2 read unchanged).

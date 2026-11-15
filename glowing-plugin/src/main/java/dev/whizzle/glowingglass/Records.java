@@ -1,7 +1,7 @@
 package dev.whizzle.glowingglass;
 
 import dev.whizzle.glowingglass.model.ChunkGlass;
-import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 /**
- * Which blocks are glowing glass, and which colour. The record lives in each chunk's persistent data
+ * Which blocks are glowing glass, and which (colour, always on or redstone). The record lives in each chunk's persistent data
  * ({@code glowingglass:glass}, {@link ChunkGlass#save}), so it travels with the world save; loaded chunks are kept
  * in memory and every change is written straight back.
  * <p>
@@ -55,7 +55,7 @@ public final class Records implements Listener {
 
     private void changed(ChunkId id) { for (Consumer<ChunkId> l : List.copyOf(listeners)) l.accept(id); }
 
-    static boolean holds(Block b, Colour c) {
+    static boolean holds(Block b, Glass c) {
         Material t = b.getType();
         return t == GlassItem.carrier(c) || t == Material.MOVING_PISTON;
     }
@@ -63,15 +63,15 @@ public final class Records implements Listener {
     // ---- reading ----
 
     /** The colour of the glowing glass at {@code b}, or null (also for a stale record). Never changes anything. */
-    public Colour at(Block b) {
+    public Glass at(Block b) {
         ChunkGlass g = glass(b);
         if (g == null) return null;
-        Colour c = g.get(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15));
+        Glass c = g.get(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15));
         return c != null && holds(b, c) ? c : null;
     }
 
     /** The recorded colour at {@code b} whatever the block is now (for drops after the block is gone). */
-    public Colour recorded(Block b) {
+    public Glass recorded(Block b) {
         ChunkGlass g = glass(b);
         return g == null ? null : g.get(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15));
     }
@@ -103,25 +103,25 @@ public final class Records implements Listener {
         }
     }
 
-    public void put(Block b, Colour c) {
+    public void put(Block b, Glass c) {
         ChunkGlass g = glass(b);
         if (g == null) return;
-        Colour before = g.put(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15), c);
-        if (before != c) write(b);
+        Glass before = g.put(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15), c);
+        if (!c.equals(before)) write(b);
     }
 
     /** Forgets the record at {@code b}; returns the colour it had (null if none). */
-    public Colour remove(Block b) {
+    public Glass remove(Block b) {
         ChunkGlass g = glass(b);
         if (g == null) return null;
-        Colour before = g.remove(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15));
+        Glass before = g.remove(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15));
         if (before != null) write(b);
         return before;
     }
 
     /** Drops the record at {@code b} if the block is no longer its carrier. */
     public void verify(Block b) {
-        Colour c = recorded(b);
+        Glass c = recorded(b);
         if (c != null && !holds(b, c)) remove(b);
     }
 

@@ -29,8 +29,8 @@ class ProtocolTest {
 
     @Test void chunkRoundTrip() {
         ChunkGlass g = new ChunkGlass();
-        g.put(ChunkGlass.pack(3, -64, 4), Colour.PINK);
-        g.put(ChunkGlass.pack(3, -63, 4), Colour.CLEAR);
+        g.put(ChunkGlass.pack(3, -64, 4), Glass.of(Colour.PINK, false));
+        g.put(ChunkGlass.pack(3, -63, 4), Glass.of(Colour.CLEAR, false));
         Protocol.Chunk c = Protocol.readChunk(Protocol.chunk(new ChunkPos(-1, 5), g));
         assertEquals(new ChunkPos(-1, 5), c.pos());
         assertEquals(g, c.glass());

@@ -2,7 +2,7 @@ package dev.whizzle.glowingglass.client;
 
 import dev.whizzle.glowingglass.client.net.Net;
 import dev.whizzle.glowingglass.client.render.GlassModels;
-import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import dev.whizzle.glowingglass.model.Protocol;
 import dev.whizzle.glowingglass.model.Protocol.ChunkPos;
 import net.fabricmc.api.ClientModInitializer;
@@ -103,7 +103,7 @@ public final class GlowingGlassClient implements ClientModInitializer {
         mc.player.sendSystemMessage(Component.literal("Glowing Glass: connected (" + GLASS.size() + " glowing glass known nearby, " + TO_ASK.size() + " chunks still to ask about)."));
         if (!(mc.hitResult instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return;
         BlockPos p = hit.getBlockPos();
-        Colour c = GLASS.at(p.getX(), p.getY(), p.getZ());
+        Glass c = GLASS.at(p.getX(), p.getY(), p.getZ());
         mc.player.sendSystemMessage(Component.literal("  Looking at: " + (c == null ? "not glowing glass" : c.itemName())));
     }
 }

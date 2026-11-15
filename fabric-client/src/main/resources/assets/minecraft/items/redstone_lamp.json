@@ -1,0 +1,125 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "glowingglass:redstone_white",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_white_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_orange",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_orange_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_magenta",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_magenta_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_light_blue",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_light_blue_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_yellow",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_yellow_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_lime",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_lime_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_pink",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_pink_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_gray",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_gray_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_light_gray",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_light_gray_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_cyan",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_cyan_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_purple",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_purple_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_blue",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_blue_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_brown",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_brown_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_green",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_green_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_red",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_red_glass_off"
+        }
+      },
+      {
+        "when": "glowingglass:redstone_clear",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_clear_glass_off"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:block/redstone_lamp"
+    }
+  }
+}

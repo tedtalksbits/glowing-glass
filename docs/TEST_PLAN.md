@@ -1,15 +1,9 @@
 # Test plan: Glowing Glass
 
-**Plugin 0.2.1: sulfur cubes don't keep glowing glass** (test 36). Release as v0.2.1.
-**Client 0.2.4: your hand-drawn light blue, recoloured to the other 15** (tests 18-21 for the look).
-**Client 0.2.3: other players placing or walking on glowing glass sound like glass too** (test 33).
-**Client 0.2.2: no carrier flash during a piston slide** (test 35; you saw it on 0.2.1). 0.2.1 brought your
-redstone-recolor textures (tests 18-21).
-**Plugin 0.2.0 + client 0.2.0 (tests 29-35):** glass sounds for every colour, and no glimpse of the carrier when
-glowing glass appears (placed by you or someone else, or coming into view). Update both (the dev loop does).
-Slice 2 (the mod, tests 17-28) ran in your game on 0.1.0, where you found the two things 0.2.0 fixes. Slice 1 (server side, tests 1-16)
-passed the real-Paper self-test (25 checks now). `/glowingglass info` (plugin) and `/glowingglassmod` (mod) show what
-each side knows.
+**New: slice 3, redstone glowing glass (plugin 0.3.0 + client 0.3.0, tests 37-46).** Update both. The self-test
+passed on a real Paper server (33 checks, 8 of them new for redstone glass); nothing about it has been seen in a game
+yet. v0.2.1 (plugin 0.2.1 + client 0.2.4) is released; tests 1-36 cover it. `/glowingglass info` (plugin) and
+`/glowingglassmod` (mod) show what each side knows.
 
 ## Setup (once, about 5 minutes)
 
@@ -62,6 +56,16 @@ each side knows.
 | 34 | Fly away until the demo wall unloads, then come back; relog next to it | It comes back as glowing glass, no carrier flash. |
 | 35 | A piston (and a sticky piston pulling back) moving a row of glowing glass, and a slime contraption | Glowing glass the whole way, during the slide too (client 0.2.2). |
 | 36 | Right-click a sulfur cube holding glowing glass; then drop one on the ground next to a cube | Feeding by hand does nothing (it stays in your hand). The dropped one may vanish into the cube for a moment, then pops back out and stays on the ground; the cube never shows a sea lantern or froglight inside. |
+| 37 | `/glowingglass demo redstone` (creative) | A wall of 32 redstone glowing glass 3 blocks ahead: the top 16 lit (redstone blocks behind them), the bottom 16 dark. Each in its colour; the dark ones a dimmed version of the same texture. Screenshot please, with and without the shader. |
+| 38 | Recipe book, search "glowing" | 16 more recipes, in the redstone tab, grouped. |
+| 39 | Crafting table: 8 Glowing Blue Glass around 1 redstone dust | 8 Redstone Glowing Blue Glass. A renamed Glowing Blue Glass works too; mixing colours, or plain sea lanterns, gives nothing. |
+| 40 | Hover the item; look at it in your hotbar | "Redstone Glowing Blue Glass"; the dark (unlit) texture, like a vanilla redstone lamp item. |
+| 41 | Place one, put a lever on it, flip the lever on and off | Lit texture while powered, dark texture when not (vanilla's short delay before it goes dark). `/glowingglass info`: "Redstone Glowing Blue Glass". |
+| 42 | Power a row of them with redstone dust, a repeater, a button | Each lights and goes dark like a redstone lamp would. |
+| 43 | **Survival:** break a lit one and a dark one | Each drops 1 Redstone Glowing ... Glass of its colour. |
+| 44 | Middle-click a placed one (creative, then survival with one in your inventory) | Redstone glowing glass of that colour, not a plain lamp and not the always-on kind. |
+| 45 | A piston pushing one onto a spot next to a redstone block | Moves as glowing glass, lights up where it lands, no lamp flash during the slide. |
+| 46 | A friend **without** the mod (or the 0.2.4 mod) | Sees a plain redstone lamp that lights with power; no errors. |
 
 
 ## ⚠️ Known limits and decisions for you
@@ -77,7 +81,11 @@ each side knows.
 6. **Sulfur cubes don't keep glowing glass** (they'd show the carrier inside). Feeding by hand and by dispenser is
    refused; one a cube picks up off the ground is spat back out the next moment (Paper fires no event before that
    pickup), and mobs can't pick that item up again until a player does.
-7. **Textures: your hand-drawn light blue** (Aseprite), recoloured to the other 15 by
+7. **Redstone glass looks the same in every shader light**: it sits on a redstone lamp, so coloured-light shaders
+   give all 16 the lamp's warm light (your call). Players without the mod see a redstone lamp.
+   **Unlit textures** (`glowing_<colour>_glass_off.png`) are generated from the lit ones by
+   `recolor.py --off` (darker, less saturated); replace them like the others if you draw your own.
+   **Textures: your hand-drawn light blue** (Aseprite), recoloured to the other 15 by
    `Claude outputs\glowing-glass\recolor\recolor.py` (client 0.2.4; the redstone-recolor set before that is still in
    `Claude outputs\glowing-glass\textures-16px\redstone-recolor\` and in git). To change them again, replace the files in
    `fabric-client/src/main/resources/assets/glowingglass/textures/block/` (same names, 16 x 16, opaque; a unit test

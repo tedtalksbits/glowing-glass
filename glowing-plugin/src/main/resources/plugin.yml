@@ -7,7 +7,7 @@ author: tedtalksbits
 commands:
   glowingglass:
     description: Glowing Glass help, info and demo
-    usage: /glowingglass [info | demo [kit]]
+    usage: /glowingglass [info | demo [redstone] [kit]]
     aliases: [glowglass]
     permission: glowingglass.use
 permissions:

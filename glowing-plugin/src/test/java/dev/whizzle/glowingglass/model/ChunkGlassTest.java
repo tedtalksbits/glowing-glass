@@ -17,8 +17,8 @@ class ChunkGlassTest {
 
     @Test void saveLoadRoundTrip() {
         ChunkGlass g = new ChunkGlass();
-        g.put(ChunkGlass.pack(1, -60, 2), Colour.BLUE);
-        g.put(ChunkGlass.pack(15, 300, 15), Colour.CLEAR);
+        g.put(ChunkGlass.pack(1, -60, 2), Glass.of(Colour.BLUE, false));
+        g.put(ChunkGlass.pack(15, 300, 15), Glass.of(Colour.CLEAR, false));
         assertEquals(g, ChunkGlass.load(g.save()));
         assertEquals(new ChunkGlass(), ChunkGlass.load(new ChunkGlass().save()));
     }
@@ -27,7 +27,7 @@ class ChunkGlassTest {
         Wire.Writer out = new Wire.Writer().varInt(1).varInt(2).int32(ChunkGlass.pack(0, 0, 0)).varInt(15).int32(ChunkGlass.pack(1, 0, 0)).varInt(Colour.RED.id);
         ChunkGlass g = ChunkGlass.load(out.bytes());
         assertEquals(1, g.size());
-        assertEquals(Colour.RED, g.get(ChunkGlass.pack(1, 0, 0)));
+        assertEquals(Glass.of(Colour.RED, false), g.get(ChunkGlass.pack(1, 0, 0)));
     }
 
     @Test void rejectsBadData() {

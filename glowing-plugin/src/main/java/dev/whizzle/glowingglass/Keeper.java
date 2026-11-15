@@ -1,6 +1,6 @@
 package dev.whizzle.glowingglass;
 
-import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import io.papermc.paper.event.player.PlayerPickBlockEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -71,7 +71,7 @@ public final class Keeper implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onPlace(BlockPlaceEvent e) {
         Block b = e.getBlockPlaced();
-        Colour c = GlassItem.colour(e.getItemInHand());
+        Glass c = GlassItem.glass(e.getItemInHand());
         if (c != null && b.getType() == GlassItem.carrier(c)) records.put(b, c);
         else if (records.recorded(b) != null) records.remove(b);
     }
@@ -86,7 +86,7 @@ public final class Keeper implements Listener {
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerBreakDrops(BlockDropItemEvent e) {
         Block b = e.getBlock();
-        Colour c = records.recorded(b);
+        Glass c = records.recorded(b);
         if (c == null || e.getBlockState().getType() != GlassItem.carrier(c)) return;
         records.remove(b);
         if (e.getItems().isEmpty()) return;
@@ -109,7 +109,7 @@ public final class Keeper implements Listener {
         ItemStack stack = e.getEntity().getItemStack();
         if (!isCarrierDrop(stack.getType()) || GlassItem.is(stack)) return;
         Block at = e.getLocation().getBlock();
-        Colour c = records.at(at);
+        Glass c = records.at(at);
         if (c == null || at.getType() == Material.MOVING_PISTON || !dropsAs(c, stack.getType())) return;
         if (droppedThisTick.add(at.getLocation())) {
             e.getEntity().setItemStack(GlassItem.create(c, 1));
@@ -119,8 +119,8 @@ public final class Keeper implements Listener {
         }
     }
 
-    /** What a carrier block can drop: itself, or prismarine crystals for a sea lantern. */
-    static boolean dropsAs(Colour c, Material drop) {
+    /** What a carrier block can drop: itself (redstone lamps too), or prismarine crystals for a sea lantern. */
+    static boolean dropsAs(Glass c, Material drop) {
         Material carrier = GlassItem.carrier(c);
         return drop == carrier || (carrier == Material.SEA_LANTERN && drop == Material.PRISMARINE_CRYSTALS);
     }
@@ -157,7 +157,7 @@ public final class Keeper implements Listener {
         if (glass == null) return;
         records.batch(() -> {
             for (Block b : glass) {
-                Colour c = records.at(b);
+                Glass c = records.at(b);
                 if (c == null) continue;
                 records.remove(b);
                 b.setType(Material.AIR);
@@ -178,9 +178,9 @@ public final class Keeper implements Listener {
     void move(Block piston, List<Block> blocks, boolean extend) {
         if (!(piston.getBlockData() instanceof Directional d)) return;
         BlockFace dir = extend ? d.getFacing() : d.getFacing().getOppositeFace();
-        Map<Block, Colour> moving = new LinkedHashMap<>();
+        Map<Block, Glass> moving = new LinkedHashMap<>();
         for (Block b : blocks) {
-            Colour c = records.at(b);
+            Glass c = records.at(b);
             if (c != null) moving.put(b, c);
         }
         if (moving.isEmpty()) return;
@@ -193,13 +193,13 @@ public final class Keeper implements Listener {
     // ---- middle-click ----
 
     /**
-     * Middle-click on glowing glass picks glowing glass of that colour, never the carrier (which is what the game would
+     * Middle-click on glowing glass picks glowing glass of that kind and colour, never the carrier (which is what the game would
      * pick). In creative it hands one out if there's none in the inventory (with or without Ctrl: there's no extra
      * data to copy); in survival with none, nothing is picked.
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPick(PlayerPickBlockEvent e) {
-        Colour c = records.at(e.getBlock());
+        Glass c = records.at(e.getBlock());
         if (c == null) return;
         Player p = e.getPlayer();
         PlayerInventory inv = p.getInventory();
@@ -218,8 +218,8 @@ public final class Keeper implements Listener {
         inv.setHeldItemSlot(target);
     }
 
-    static int slotWith(PlayerInventory inv, Colour c) {
-        for (int i = 0; i < 36; i++) if (GlassItem.colour(inv.getItem(i)) == c) return i;
+    static int slotWith(PlayerInventory inv, Glass c) {
+        for (int i = 0; i < 36; i++) if (c.equals(GlassItem.glass(inv.getItem(i)))) return i;
         return -1;
     }
 

@@ -5,7 +5,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import dev.whizzle.glowingglass.client.Prediction;
 import dev.whizzle.glowingglass.client.Sounds;
-import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.BlockItem;
@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.At;
 abstract class BlockItemMixin {
     @WrapOperation(method = "place", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/BlockItem;placeBlock(Lnet/minecraft/world/item/context/BlockPlaceContext;Lnet/minecraft/world/level/block/state/BlockState;)Z"))
     private boolean glowingglass$markBeforePlacing(BlockItem self, BlockPlaceContext ctx, BlockState state, Operation<Boolean> original) {
-        Colour marked = Prediction.before(ctx);
+        Glass marked = Prediction.before(ctx);
         boolean placed = original.call(self, ctx, state);
         Prediction.after(ctx, marked, placed);
         return placed;

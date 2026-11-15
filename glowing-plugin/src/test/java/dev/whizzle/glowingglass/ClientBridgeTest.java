@@ -2,6 +2,7 @@ package dev.whizzle.glowingglass;
 
 import dev.whizzle.glowingglass.model.ChunkGlass;
 import dev.whizzle.glowingglass.model.Colour;
+import dev.whizzle.glowingglass.model.Glass;
 import dev.whizzle.glowingglass.model.Protocol;
 import dev.whizzle.glowingglass.model.Protocol.ChunkPos;
 import org.bukkit.Location;
@@ -42,7 +43,7 @@ class ClientBridgeTest {
             glass.put(c, new ChunkGlass());
             sentChunks.add(c);
         }
-        glass.get(new ChunkPos(1, 2)).put(ChunkGlass.pack(4, 70, 5), Colour.BLUE);
+        glass.get(new ChunkPos(1, 2)).put(ChunkGlass.pack(4, 70, 5), Glass.of(Colour.BLUE, false));
     }
     @AfterEach void tearDown() { MockBukkit.unmock(); }
 
@@ -76,7 +77,7 @@ class ClientBridgeTest {
         query(player, new ChunkPos(1, 2));
         bridge.tick();
         sent.clear(); bodies.clear();
-        glass.get(new ChunkPos(1, 2)).put(ChunkGlass.pack(0, 71, 0), Colour.RED);
+        glass.get(new ChunkPos(1, 2)).put(ChunkGlass.pack(0, 71, 0), Glass.of(Colour.RED, false));
         bridge.changed(new Records.ChunkId(world.getUID(), new ChunkPos(1, 2).key()));
         assertEquals(1, sent.size(), "pushed straight away, not on the next tick");
         assertEquals(player.getName(), sent.getFirst()[0]);

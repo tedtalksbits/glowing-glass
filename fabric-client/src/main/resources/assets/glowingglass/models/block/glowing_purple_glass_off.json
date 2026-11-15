@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "glowingglass:block/glowing_purple_glass_off"
+  }
+}
