@@ -1,0 +1,62 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "glowingglass:white",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_white_glass"
+        }
+      },
+      {
+        "when": "glowingglass:light_blue",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_light_blue_glass"
+        }
+      },
+      {
+        "when": "glowingglass:gray",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_gray_glass"
+        }
+      },
+      {
+        "when": "glowingglass:light_gray",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_light_gray_glass"
+        }
+      },
+      {
+        "when": "glowingglass:cyan",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_cyan_glass"
+        }
+      },
+      {
+        "when": "glowingglass:blue",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_blue_glass"
+        }
+      },
+      {
+        "when": "glowingglass:clear",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_clear_glass"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:block/sea_lantern"
+    }
+  }
+}

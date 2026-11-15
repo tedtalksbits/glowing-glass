@@ -11,8 +11,8 @@ tedtalksbits, MC name TedTalks2). Standalone: its own repo and versions, unrelat
 Blueprints or the frog plugin (their patterns were copied, their files never edited).
 
 Paper can't add blocks, so each glowing glass is a vanilla light block (the **carrier**: sea lantern, a froglight or
-a shroomlight) plus a record saying which colour it is. The mod (slice 2) will swap the carrier's model for marked
-positions; everyone else sees the carrier.
+a shroomlight) plus a record saying which colour it is. The mod swaps the carrier's model for marked positions; everyone
+else sees the carrier.
 
 - `glowing-plugin/`: Paper plugin (Java 25). Items, recipes, records, every drop and move path, the protocol.
   - `GlassItem`: the item (carrier item + PDC colour + item name + custom model data string).
@@ -22,11 +22,26 @@ positions; everyone else sees the carrier.
   - `ClientBridge`: the protocol (query per chunk, then pushes).
   - `Demo`: `/glowingglass demo [kit]`.
 - `glowing-plugin/src/main/java/dev/whizzle/glowingglass/model/`: pure Java (`Colour`, `ChunkGlass`, `Protocol`,
-  `Wire`), to be **compiled into both** the plugin and the mod (slice 2, as Shulker Styles does). Change it once.
+  `Wire`), **compiled into both** the plugin and the mod (`fabric-client/build.gradle`). Change it once.
+- `fabric-client/`: Fabric client mod. Separate Gradle build. No mixins.
+  - `GlowingGlassClient`: handshake, a query per chunk the client loads (64 per tick), `/glowingglassmod`.
+  - `GlassCache`: what the server said, by chunk; read from chunk-meshing threads, each chunk's map replaced whole.
+  - `render/GlassModels`: one extra cube model per colour (`ExtraModelKey`), and `modifyBlockModelAfterBake` wraps
+    every block state model of the five carriers in `render/GlassBlockModel`, which emits the glass cube at marked
+    positions (Fabric renderer API `emitQuads`) and the carrier's own model elsewhere.
+  - Items: `assets/minecraft/items/<carrier>.json` override vanilla's with a `minecraft:select` on custom model data
+    string 0 (`glowingglass:blue`), falling back to the vanilla model.
+  - Textures: `assets/glowingglass/textures/block/glowing_<colour>_glass.png` (the owner's drafts for now).
 - `paper-selftest/`: development-only plugin that checks the plugin on a real Paper server.
 
 ## Status (2026-11-14)
 
+- **Slice 2 (the mod) done, not yet seen on screen.** Client 0.1.0, plugin unchanged (0.1.0), protocol 1.
+  - Checked here: the mod compiles against 26.3 / Fabric API 0.164.0; `ci/mixin-audit/run.sh` loads every mod class
+    in a real Fabric Loader (BlockStateModel carries Fabric's `emitQuads`; GlassBlockModel overrides the five
+    position-aware methods); 6 client unit tests (cache, resources) in a plain-JUnit build.
+  - **Not checked: anything on screen** (no 26.3 client here), Sodium/Iris, the piston slide.
+    `docs/TEST_PLAN.md` tests 17-28.
 - **Slice 1 (server side) done, not yet in a real game.** Plugin 0.1.0, protocol 1, no mod yet.
   - Checked here: 23 unit tests (MockBukkit for unit tests only); self-test on Paper 26.3-211, 22 checks: the 16
     recipes, a crafter crafting 8 blue, the vanilla-recipe guard (a probe recipe taking a sea lantern works with a
@@ -37,20 +52,17 @@ positions; everyone else sees the carrier.
   - **Not seen in a real game:** a player placing, breaking (survival/creative), middle-click, the crafting table and
     recipe book, the composter click. `docs/TEST_PLAN.md` tests 1-16.
   - CI: workflows written (plugin + self-test; release publishes the plugin jar), **not yet run** (the owner pushes).
-- Next: slice 2, the mod (textures from the owner's drafts, placed blocks by model swap, items by item definition
-  override). Copy Shulker Styles' `fabric-client/` setup, `ci/mixin-audit/` and the client CI job; compile `model/`
-  into the mod; add the client to the release workflow and `run/DevInstall.java` (it already skips a missing
-  `fabric-client/`).
+- Next: the owner's in-game check and screenshots, then his hand-drawn textures; then slice 3.
 
 ## Open items
 
-1. Slice 1 needs the owner's in-game check (`docs/TEST_PLAN.md`).
+1. Slices 1 and 2 need the owner's in-game check (`docs/TEST_PLAN.md`); slice 2 fixes from his screenshots.
 2. Owner to say: drop without silk touch (current) or silk touch only (`docs/TEST_PLAN.md` limit 1).
 3. Unchecked: sulfur cubes (26.x) swallowing glowing glass (shroomlight is on their list).
-4. Slice 2: before writing the renderer, read how 26.3's Fabric renderer API / model loading API wraps block models
-   (`ModelModifier`, block state model wrapping in the Fabric API jars) and how Sodium handles it. During a piston's
-   2-tick slide the moving block renders as the carrier (vanilla's moving-piston renderer): check whether that shows.
-5. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
+4. The piston slide: during its 2 ticks the moving block may render as the carrier, depending on whether the moving
+   piston renderer passes the destination position to the model (test 25). Fix only if the owner notices it.
+5. The owner's hand-drawn textures replace the drafts (same file names, 16 x 16, opaque).
+6. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
    1 redstone dust). Chaining is its own slice after that, if still wanted.
 
 ## Decisions already made (don't reopen without asking)
@@ -63,7 +75,10 @@ positions; everyone else sees the carrier.
 | Always on in v1; the redstone version (on a redstone lamp) is a later slice, chaining after that | Owner |
 | Carriers: white, light gray, gray, clear, cyan, light blue, blue on sea lantern; yellow and brown on ochre froglight; lime and green on verdant froglight; purple, magenta, pink on pearlescent froglight; red and orange on shroomlight | Owner, 2026-11-14 (brown on ochre froglight, not glowstone). Light colour is up to the player's shader, by block type |
 | Recipe: 8 glass of one colour around 1 glowstone dust -> 8; shaped; group `glowingglass`, building tab | Owner |
-| Look: frosted, lit from inside; textures hand-drawn by the owner (16 x 16, opaque, `glowing_<colour>_glass.png`), drafts until his arrive | Owner (slice 2) |
+| Look: frosted, lit from inside; textures hand-drawn by the owner (16 x 16, opaque, `glowing_<colour>_glass.png`), drafts until his arrive | Owner |
+| Placed blocks: a model swap through Fabric's renderer API (wrap the carriers' block state models after baking, emit our cube at marked positions), not an overlay | Kickoff: an overlay would sit on the carrier; the swap keeps the block a carrier to the game, so shaders still light it as one and it stays full bright |
+| Items: override the carriers' vanilla item definitions with a `select` on custom model data, vanilla fallback | Kickoff (Shulker Styles' trick); only marked items change |
+| Client asks per chunk on `ClientChunkEvents.CHUNK_LOAD` (and all loaded chunks once the welcome arrives), forgets on unload, clears everything on a level change; a pushed chunk re-meshes only the sections whose blocks changed (`setSectionDirtyWithNeighbors`) | Kickoff protocol shape |
 | Item: carrier item, PDC `glowingglass:colour`, `item_name` "Glowing Blue Glass" (clear: "Glowing Glass"), custom model data string `glowingglass:blue` | Players without the mod see a named carrier; the mod's item definitions select on the string; an anvil name doesn't remove the colour |
 | Placed blocks: one record per chunk (PDC `glowingglass:glass`, all positions and colours), in memory while loaded, written on every change | Logic Blocks keeps per-block keys; one key per chunk keeps big floors compact |
 | A record counts only while its block is its carrier (or a moving piston block); stale records are dropped on chunk load or by `verify` | Commands and world editors change blocks without events |
@@ -91,16 +106,21 @@ positions; everyone else sees the carrier.
 ## Building and testing
 
 - Plugin: `gradlew build` at the root (Java 25, Gradle 9.8.0). Jar: `glowing-plugin/build/libs/glowing-plugin-<v>.jar`.
+- Client: `cd fabric-client && gradlew build`. Jar: `fabric-client/build/libs/glowing-glass-client-<v>.jar`.
+- Mixin audit: `ci/mixin-audit/run.sh` (Linux, CI; offline add `--offline -I <init script>`, set `GRADLE_USER_HOME`,
+  or `GRADLE=<command>` to replace `./gradlew`): starts Fabric Loader with the mod, loads its classes, applies every
+  mixin, exits before the game. Prints `AUDIT RESULT OK` or fails. Add new mod classes to its target list.
 - Self-test: `ci/run-selftest.sh <paper.jar> <new-folder>` (Linux, Git Bash, CI): a throwaway flat-world server
   with `-Dglowingglass.selftest.exit=true`; fails unless `plugins/GlowingGlassSelfTest/report.txt` ends
   `SELFTEST PASSED`. Offline: `PAPER_SEED_DIR=<existing server folder>`. `SELFTEST_ONLY=piston,TNT` runs only steps
   whose names start that way. About 25 seconds.
 - Dev loop: `run\build-and-install.cmd` (Windows) or `run/build-and-install.sh` runs `run/DevInstall.java`: stops
   the local test server (RCON if enabled, else waits for `stop`), builds and tests, installs the plugin as
-  `plugins/GlowingGlass.jar` (and, from slice 2, the client in Minecraft's mods folder), offers to start the server.
+  `plugins/GlowingGlass.jar` and the client in Minecraft's mods folder, offers to start the server.
   Defaults: the test server `..\blueprints-mc\run\local-paper`, blueprints-mc's JDK and Gradle cache. Overrides:
   `GLOWINGGLASS_SERVER_DIR`, `GLOWINGGLASS_MODS_DIR`, `GLOWINGGLASS_GRADLE_ARGS`, `JAVA_HOME`, `GRADLE_USER_HOME`.
-- CI on every push to `main`: plugin and self-test (`docs/CI.md`). Releases: tag `v<plugin version>`.
+- CI on every push to `main`: plugin, client (with the audit), self-test (`docs/CI.md`). Releases: tag
+  `v<plugin version>`, both jars.
 
 ## Gotchas
 
@@ -116,8 +136,10 @@ positions; everyone else sees the carrier.
 - `Records.ChunkId.key` is Bukkit's `Chunk.getChunkKey` (x low, z high); `Protocol.ChunkPos.key()` matches it
   (unit-tested).
 - MockBukkit: no real chunk persistence or block entities; test placed-block code in the self-test.
-- From Shulker Styles, for the mod in slice 2: only mixins in the mixin package (else a black screen; run the mixin
-  audit); mouse buttons are SDL-numbered (`InputConstants.MOUSE_BUTTON_*`); screen overlays from
+- `GlassBlockModel` runs on chunk-meshing threads: only read `GlowingGlassClient.GLASS` there (a concurrent map of
+  immutable per-chunk maps); never touch the level or client state.
+- The mod has no mixins. If one is ever added, from Shulker Styles: only mixins in the mixin package (else a black
+  screen; run the audit); mouse buttons are SDL-numbered (`InputConstants.MOUSE_BUTTON_*`); screen overlays from
   `ScreenEvents.afterForeground`; the GUI font has no ✓ ✕ ≠ ≤ ≥ →.
 
 ## Cloud workspace pitfalls
@@ -129,8 +151,12 @@ positions; everyone else sees the carrier.
   (gitignored), split into parts under 350 MB, stage them (500 MB per call), unpack in the container, hard-link
   `files-2.1/<group>/<artifact>/<version>/<hash>/<file>` into a Maven layout, and build with `--offline` and an init
   script that replaces every repository with that folder. Delete `.tools\stage\` afterwards.
-- Slice 2 also needs `caches/fabric-loom/26.3` (+ `minecraftMaven`, `mojang_versions_manifest.json`); keep Loom's
-  own `file:` repositories in the init script.
+- The mod also needs `caches/fabric-loom/26.3`, `minecraftMaven` and `mojang_versions_manifest.json` (about 320 MB,
+  one part), unpacked into the container's `GRADLE_USER_HOME/caches/fabric-loom/`; the init script must keep Loom's
+  own `file:` repositories. The mod's tests need LWJGL/jtracy natives for Linux that the owner's Windows cache lacks:
+  run them in a plain-JUnit build of `model/**` + `GlassCache` + `fabric-client/src/test` (CI runs them normally).
+- Minecraft classes to read: `caches/fabric-loom/minecraftMaven/.../minecraft-merged-deobf-26.3.jar` (Mojang names),
+  vanilla assets in `caches/fabric-loom/26.3/minecraft-client.jar`; `javap` is enough for signatures.
 - Getting commits to the owner: `git bundle create X.bundle main` (later `<his HEAD>..main`), copy it to
   `.tools\transfer\`, `git pull --ff-only .tools/transfer/X.bundle main` in the repo, delete `.tools/transfer`. Git
   on the device needs delete permission (its lock files).

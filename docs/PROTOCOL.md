@@ -2,7 +2,7 @@
 
 Plugin messages on `glowingglass:*` channels. Encoding is Minecraft's `FriendlyByteBuf` style: VarInt, big-endian
 Int32, String (VarInt byte length + UTF-8). Both sides use the shared `dev.whizzle.glowingglass.model` classes
-(`Wire`, `Protocol`, `ChunkGlass`, `Colour`), compiled into the plugin and (slice 2) the mod.
+(`Wire`, `Protocol`, `ChunkGlass`, `Colour`), compiled into the plugin and the mod.
 
 | Channel | Direction | Body |
 |---|---|---|

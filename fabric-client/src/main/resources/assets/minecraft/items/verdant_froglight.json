@@ -1,0 +1,27 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "glowingglass:lime",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_lime_glass"
+        }
+      },
+      {
+        "when": "glowingglass:green",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_green_glass"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:block/verdant_froglight"
+    }
+  }
+}

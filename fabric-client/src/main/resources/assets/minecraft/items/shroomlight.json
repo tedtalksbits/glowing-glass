@@ -1,0 +1,27 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "glowingglass:orange",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_orange_glass"
+        }
+      },
+      {
+        "when": "glowingglass:red",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_red_glass"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:block/shroomlight"
+    }
+  }
+}

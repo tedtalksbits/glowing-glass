@@ -1,0 +1,27 @@
+{
+  "model": {
+    "type": "minecraft:select",
+    "property": "minecraft:custom_model_data",
+    "index": 0,
+    "cases": [
+      {
+        "when": "glowingglass:yellow",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_yellow_glass"
+        }
+      },
+      {
+        "when": "glowingglass:brown",
+        "model": {
+          "type": "minecraft:model",
+          "model": "glowingglass:block/glowing_brown_glass"
+        }
+      }
+    ],
+    "fallback": {
+      "type": "minecraft:model",
+      "model": "minecraft:block/ochre_froglight"
+    }
+  }
+}

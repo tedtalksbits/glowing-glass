@@ -2,7 +2,7 @@
 
 Coloured glass that gives off light, for decorative builds: glowing flames, signs, floors. One glowing glass for each
 glass colour (15 stained colours and clear; no black yet). A Paper plugin (recipes, storage, works for everyone)
-plus a Fabric client mod (draws it; slice 2). Players without the mod see a sea lantern, froglight or shroomlight,
+plus a Fabric client mod (draws it). Players without the mod see a sea lantern, froglight or shroomlight,
 with light 15 either way.
 
 By **tedtalksbits**. Minecraft / Paper 26.3.
@@ -31,10 +31,14 @@ by block type, so each colour sits on the vanilla light block closest to it:
 
 ## Status
 
-Slice 1 (server side) is done: plugin 0.1.0, protocol 1. The mod (textures and drawing) is slice 2; the redstone
-version is slice 3. See `AGENTS.md` and `docs/TEST_PLAN.md`.
+Plugin 0.1.0 and client mod 0.1.0, protocol 1. Slice 1 (server side) and slice 2 (the mod, with draft textures
+until the hand-drawn ones arrive) are done; the redstone version is slice 3. See `AGENTS.md` and `docs/TEST_PLAN.md`.
+
+**With the mod** (`glowing-glass-client-<version>.jar` plus Fabric API in `.minecraft/mods`): placed glowing glass
+and its items show the frosted glass textures. `/glowingglassmod` says whether it's connected and what you look at.
 
 ## Building
 
-`gradlew build` (Java 25). Jar: `glowing-plugin/build/libs/glowing-plugin-<version>.jar`. Self-test on a real Paper
+Plugin: `gradlew build` (Java 25). Jar: `glowing-plugin/build/libs/glowing-plugin-<version>.jar`. Mod:
+`cd fabric-client && gradlew build`. Jar: `fabric-client/build/libs/glowing-glass-client-<version>.jar`. Self-test on a real Paper
 server: `ci/run-selftest.sh` (docs/CI.md). Dev loop on Windows: `run\build-and-install.cmd`.
