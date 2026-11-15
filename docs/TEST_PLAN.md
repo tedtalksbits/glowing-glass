@@ -1,6 +1,8 @@
 # Test plan: Glowing Glass
 
-**New: slice 3, redstone glowing glass (plugin 0.3.0 + client 0.3.0, tests 37-46).** Update both. The self-test
+**New: client 0.3.1, a "Glowing Glass" creative tab (test 47).** Slice 3 (redstone glowing glass, plugin 0.3.0, tests
+37-46) worked in your game on client 0.3.0.
+**Slice 3, redstone glowing glass (plugin 0.3.0 + client 0.3.0, tests 37-46).** Update both. The self-test
 passed on a real Paper server (33 checks, 8 of them new for redstone glass); nothing about it has been seen in a game
 yet. v0.2.1 (plugin 0.2.1 + client 0.2.4) is released; tests 1-36 cover it. `/glowingglass info` (plugin) and
 `/glowingglassmod` (mod) show what each side knows.
@@ -66,6 +68,7 @@ yet. v0.2.1 (plugin 0.2.1 + client 0.2.4) is released; tests 1-36 cover it. `/gl
 | 44 | Middle-click a placed one (creative, then survival with one in your inventory) | Redstone glowing glass of that colour, not a plain lamp and not the always-on kind. |
 | 45 | A piston pushing one onto a spot next to a redstone block | Moves as glowing glass, lights up where it lands, no lamp flash during the slide. |
 | 46 | A friend **without** the mod (or the 0.2.4 mod) | Sees a plain redstone lamp that lights with power; no errors. |
+| 47 | Creative inventory: the "Glowing Glass" tab, then search "glow" | The tab has all 32 (always-on, then redstone). Search finds them. Take some out, place them: `/glowingglass info` says glowing glass; they stack with crafted ones. |
 
 
 ## ⚠️ Known limits and decisions for you

@@ -15,6 +15,7 @@ public class MixinAudit implements PreLaunchEntrypoint {
             "net.minecraft.world.entity.LivingEntity", "net.minecraft.world.entity.animal.equine.AbstractHorse",
             "net.minecraft.client.renderer.blockentity.PistonHeadRenderer", "net.minecraft.client.multiplayer.ClientPacketListener", "net.minecraft.client.renderer.block.MovingBlockRenderState",
             "dev.whizzle.glowingglass.client.Sounds", "dev.whizzle.glowingglass.client.Prediction",
+            "dev.whizzle.glowingglass.client.CreativeTab",
             "net.minecraft.client.renderer.block.dispatch.BlockStateModel",
             "net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel",
             "dev.whizzle.glowingglass.client.GlowingGlassClient", "dev.whizzle.glowingglass.client.GlassCache",

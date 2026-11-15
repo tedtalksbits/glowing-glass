@@ -52,6 +52,7 @@ public final class GlowingGlassClient implements ClientModInitializer {
             },
             Protocol.CHUNK, data -> onChunk(Protocol.readChunk(data))));
         GlassModels.register();
+        CreativeTab.register();
         ClientPlayConnectionEvents.JOIN.register((listener, sender, client) -> reset());
         ClientPlayConnectionEvents.DISCONNECT.register((listener, client) -> reset());
         ServerboundPlayChannelEvents.REGISTER.register((listener, sender, client, channels) -> {

@@ -24,6 +24,7 @@ else sees the carrier.
 - `glowing-plugin/src/main/java/dev/whizzle/glowingglass/model/`: pure Java (`Colour`, `ChunkGlass`, `Protocol`,
   `Wire`), **compiled into both** the plugin and the mod (`fabric-client/build.gradle`). Change it once.
 - `fabric-client/`: Fabric client mod. Separate Gradle build.
+  - `CreativeTab`: the "Glowing Glass" creative tab (all 32, with the plugin's exact item components).
   - `GlowingGlassClient`: handshake, queries for chunks loaded before the welcome (64 per tick), `/glowingglassmod`.
   - `Prediction`: the player's own placement is marked in the cache from the item before the block appears.
   - `Sounds` + `mixin/`: glass sounds at glowing glass positions (place, break, mining hits, steps, horse steps,
@@ -41,6 +42,11 @@ else sees the carrier.
 - `paper-selftest/`: development-only plugin that checks the plugin on a real Paper server.
 
 ## Status (2026-11-15)
+
+- **Client 0.3.1: "Glowing Glass" creative tab** (owner: glowing glass wasn't in creative search; slice 3 worked in
+  his game). `CreativeTab.stack` builds each stack with exactly the plugin's three components; the self-test
+  ("creative tab") rebuilds that JSON for all 32 and checks the server reads it as glowing glass and `isSimilar` to
+  a crafted one. Not yet seen in game (test 47).
 
 - **Slice 3 done: redstone glowing glass** (plugin 0.3.0 + client 0.3.0, protocol 1 unchanged). v0.2.1 was released
   before it (owner tagged).
@@ -107,7 +113,8 @@ else sees the carrier.
 
 ## Open items
 
-1. Slice 3 needs the owner's in-game check (`docs/TEST_PLAN.md` tests 37-46), then release v0.3.0.
+1. Client 0.3.1 needs the owner's creative tab check (`docs/TEST_PLAN.md` test 47), then release v0.3.0 (plugin 0.3.0 +
+   client 0.3.1).
 2. Possible slice 4: chaining (one powered redstone glowing glass lights its whole connected group), only if the owner
    still wants it after playing with slice 3.
 
@@ -143,6 +150,7 @@ else sees the carrier.
 | Its recipe: 8 glowing glass of one colour around 1 redstone dust -> 8 | Owner, 2026-11-15 |
 | Its unlit look: a darkened version of the lit texture (`recolor.py --off`: OKLab lightness x 0.58, chroma x 0.7) | Owner, 2026-11-15 |
 | Its name: "Redstone Glowing Blue Glass" ("Redstone Glowing Glass" for clear); its item shows the unlit cube | Owner, 2026-11-15 (name); unlit item like vanilla's lamp |
+| Creative: one "Glowing Glass" tab (mod only), all 32, always-on first | Owner, 2026-11-15 |
 | Demos only in creative | Same rule as the other projects: they hand out free items |
 | Release tag = plugin version; the client keeps its own version | Same as the other projects |
 
@@ -197,6 +205,9 @@ else sees the carrier.
   (black screen, Shulker Styles 0.2.0). `MixinPackageTest` checks the list; run `ci/mixin-audit/run.sh` after any
   mixin change. The audit loads classes without initialising them (initialising Minecraft classes needs the game's
   registries); loading is what applies mixins, and a mixin that can't apply fails the audit.
+- **`CreativeTab.stack` must build the same components as `GlassItem.create`** (custom_data PublicBukkitValues,
+  item_name, custom_model_data strings). Change one, change the other and the self-test's JSON; otherwise creative
+  items stop stacking with crafted ones, or stop being glowing glass.
 - `BlockItem.place` runs on the integrated server too: `Prediction` only acts on the client level.
 - From Shulker Styles, for any future UI: mouse buttons are SDL-numbered (`InputConstants.MOUSE_BUTTON_*`); screen
   overlays from `ScreenEvents.afterForeground`; the GUI font has no ✓ ✕ ≠ ≤ ≥ →.

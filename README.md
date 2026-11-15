@@ -16,6 +16,7 @@ By **tedtalksbits**. Minecraft / Paper 26.3.
 - **Placing and breaking:** like any block. It drops itself, also when broken without silk touch, blown up (with
   the explosion's usual drop chance) or knocked out by a command. Pistons, slime and honey blocks move it.
 - **Middle-click** picks glowing glass of that colour (creative hands one out), never the block underneath.
+- **Creative:** with the mod, a "Glowing Glass" tab holds all 32, and creative search finds them.
 - `/glowingglass info`: what the block you look at, or the item you hold, is.
 - `/glowingglass demo` (creative): all 16 in a wall in front of you, and a kit; `/glowingglass demo kit` for the kit
   only. `/glowingglass demo redstone [kit]`: the redstone ones, the top copy powered.
@@ -34,7 +35,7 @@ by block type, so each colour sits on the vanilla light block closest to it:
 
 ## Status
 
-Plugin 0.3.0 and client mod 0.3.0, protocol 1. Slice 1 (server side), slice 2 (the mod) and slice 3 (redstone glowing
+Plugin 0.3.0 and client mod 0.3.1, protocol 1. Slice 1 (server side), slice 2 (the mod) and slice 3 (redstone glowing
 glass) are done; chaining (one powered block lighting its whole group) is a possible slice 4. See `AGENTS.md` and `docs/TEST_PLAN.md`.
 
 **With the mod** (`glowing-glass-client-<version>.jar` plus Fabric API in `.minecraft/mods`): placed glowing glass

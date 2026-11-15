@@ -334,6 +334,20 @@ public final class SelfTestPlugin extends JavaPlugin {
             w.getBlockAt(sl - 1, up, 0).setType(Material.REDSTONE_BLOCK);
         }, 6, () -> all(recordIs(w.getBlockAt(sl + 2, up, 1), Colour.PINK), recordIs(w.getBlockAt(sl + 3, up, 0), Colour.GRAY), noRecord(w.getBlockAt(sl + 1, up, 1)))));
 
+        steps.add(new Step("creative tab: an item built the way the mod's tab builds it is real glowing glass and stacks with crafted ones (all 32)", () -> { }, 1, () -> {
+            for (Glass gl : Glass.all()) {
+                // The same three components fabric-client's CreativeTab.stack sets.
+                String json = "{\"id\":\"" + gl.carrierId() + "\",\"count\":1,\"components\":{"
+                    + "\"minecraft:custom_data\":\"{PublicBukkitValues:{\\\"glowingglass:colour\\\":\\\"" + gl.colour().key + "\\\""
+                    + (gl.redstone() ? ",\\\"glowingglass:redstone\\\":1b" : "") + "}}\","
+                    + "\"minecraft:item_name\":\"" + gl.itemName() + "\","
+                    + "\"minecraft:custom_model_data\":{\"strings\":[\"" + gl.modelString() + "\"]}},\"DataVersion\":" + Bukkit.getUnsafe().getDataVersion() + "}";
+                ItemStack fromTab = Bukkit.getUnsafe().deserializeItemFromJson(new com.google.gson.JsonParser().parse(json).getAsJsonObject());
+                if (!gl.equals(GlassItem.glass(fromTab))) return gl + ": the tab's item reads as " + GlassItem.glass(fromTab);
+                if (!fromTab.isSimilar(GlassItem.create(gl, 1))) return gl + ": the tab's item wouldn't stack with a crafted one: " + Bukkit.getUnsafe().serializeItemAsJson(fromTab) + " vs " + Bukkit.getUnsafe().serializeItemAsJson(GlassItem.create(gl, 1));
+            }
+            return null;
+        }));
         // 6. Redstone glowing glass.
         steps.add(new Step("redstone: 16 recipes, 8 glowing glass of one colour around 1 redstone dust -> 8 redstone glowing glass", () -> { }, 1, () -> {
             for (Glass gl : Glass.all(true)) {
