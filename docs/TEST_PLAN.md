@@ -1,6 +1,7 @@
 # Test plan: Glowing Glass
 
-**New: plugin 0.2.0 + client 0.2.0 (tests 29-35):** glass sounds for every colour, and no glimpse of the carrier when
+**Client 0.2.1 uses your redstone-recolor textures** (nothing else changed): tests 18-21 for the look.
+**Plugin 0.2.0 + client 0.2.0 (tests 29-35):** glass sounds for every colour, and no glimpse of the carrier when
 glowing glass appears (placed by you or someone else, or coming into view). Update both (the dev loop does).
 Slice 2 (the mod, tests 17-28) ran in your game on 0.1.0, where you found the two things 0.2.0 fixes. Slice 1 (server side, tests 1-16)
 passed the real-Paper self-test (23 checks now). `/glowingglass info` (plugin) and `/glowingglassmod` (mod) show what
@@ -38,7 +39,7 @@ each side knows.
 | 15 | Put glowing glass in a crafting grid in any shape | No result, ever (no vanilla recipe may treat it as its sea lantern or froglight). |
 | 16 | `/glowingglass demo` in survival | "Demos only work in creative mode." |
 | 17 | `/glowingglassmod` | "Glowing Glass: connected (N glowing glass known nearby, ...)". |
-| 18 | Look at the demo wall (shader **off**) | Every block shows its frosted glass texture: dark frame in the glass colour, pale centre. No sea lantern, froglight or shroomlight pattern anywhere. Screenshot please. |
+| 18 | Look at the demo wall (shader **off**) | Every block shows its texture from your redstone-recolor set, in its colour. No sea lantern, froglight or shroomlight pattern anywhere. Screenshot please. |
 | 19 | Same, shader **on** (Complementary via Iris) | Same textures; each block glows and lights its surroundings the way its carrier would (blues and grays like a sea lantern, and so on). Screenshot please. |
 | 20 | Look at one block: `/glowingglassmod` | "Looking at: Glowing ... Glass", the right colour. |
 | 21 | Your hotbar and inventory, the item in your hand, one dropped on the ground, one in an item frame | The glowing glass texture as a cube, not a sea lantern or froglight. |
@@ -60,8 +61,7 @@ each side knows.
 
 ## ⚠️ Known limits and decisions for you
 
-1. **It always drops itself**, also without silk touch (vanilla glass needs silk touch; the kickoff said to replace
-   the carrier's drops with the glowing glass item). Say if you'd rather it need silk touch.
+1. **It always drops itself**, also without silk touch (vanilla glass needs silk touch). Your call, 2026-11-14.
 2. **Explosions use their usual drop chance**: TNT always drops it, a creeper sometimes doesn't, like any block.
 3. **Survival middle-click with none in your inventory picks nothing**, rather than the plain sea lantern or
    froglight it is underneath (same rule as Logic Blocks).
@@ -71,9 +71,10 @@ each side knows.
 5. **Sea lanterns count for conduits**, so the seven sea-lantern colours do too. Harmless.
 6. Not checked yet: whether a **sulfur cube** (26.x) can swallow it (shroomlights are on its list; red and orange
    might come back as their carrier, or not at all). I couldn't test it without a player.
-7. **Textures are my drafts** (16 x 16, opaque) until yours arrive: drop yours into
-   `fabric-client/src/main/resources/assets/glowingglass/textures/block/` with the same names
-   (`glowing_<colour>_glass.png`, `clear` for plain glass) and rebuild. The draft white is nearly blank.
+7. **Textures: your "redstone-recolor" set** (client 0.2.1), from `Claude outputs\glowing-glass\textures-16px\
+   redstone-recolor\`. To change them again, replace the files in
+   `fabric-client/src/main/resources/assets/glowingglass/textures/block/` (same names, 16 x 16, opaque; a unit test
+   checks) and rebuild.
 8. **Nothing on screen is checked here** (you check it): the cloud workspace can't run the 26.3 client. Checked: the mod compiles,
    loads in a real Fabric Loader with Fabric API (the audit loads every class), and its unit tests pass (resources:
    every colour has a texture, model and item case). Likely suspects if something looks wrong: Sodium/Iris not

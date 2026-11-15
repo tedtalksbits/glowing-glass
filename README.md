@@ -31,11 +31,10 @@ by block type, so each colour sits on the vanilla light block closest to it:
 
 ## Status
 
-Plugin 0.1.0 and client mod 0.1.0, protocol 1. Slice 1 (server side) and slice 2 (the mod, with draft textures
-until the hand-drawn ones arrive) are done; the redstone version is slice 3. See `AGENTS.md` and `docs/TEST_PLAN.md`.
+Plugin 0.2.0 and client mod 0.2.1, protocol 1. Slice 1 (server side) and slice 2 (the mod) are done; the redstone version is slice 3. See `AGENTS.md` and `docs/TEST_PLAN.md`.
 
 **With the mod** (`glowing-glass-client-<version>.jar` plus Fabric API in `.minecraft/mods`): placed glowing glass
-and its items show the frosted glass textures. `/glowingglassmod` says whether it's connected and what you look at.
+and its items show the glowing glass textures. `/glowingglassmod` says whether it's connected and what you look at.
 
 ## Building
 

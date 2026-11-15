@@ -34,11 +34,12 @@ else sees the carrier.
     positions (Fabric renderer API `emitQuads`) and the carrier's own model elsewhere.
   - Items: `assets/minecraft/items/<carrier>.json` override vanilla's with a `minecraft:select` on custom model data
     string 0 (`glowingglass:blue`), falling back to the vanilla model.
-  - Textures: `assets/glowingglass/textures/block/glowing_<colour>_glass.png` (the owner's drafts for now).
+  - Textures: `assets/glowingglass/textures/block/glowing_<colour>_glass.png` (the owner's redstone-recolor set).
 - `paper-selftest/`: development-only plugin that checks the plugin on a real Paper server.
 
 ## Status (2026-11-14)
 
+- **Client 0.2.1: the owner's redstone-recolor textures**, nothing else changed. Not yet seen in game.
 - **Plugin 0.2.0 + client 0.2.0 (owner's two requests after trying 0.1.0), not yet seen in game.** Protocol 1
   unchanged (any mix of versions works).
   - Glass sounds for every colour (the froglight and shroomlight colours had their carriers' sounds).
@@ -70,14 +71,12 @@ else sees the carrier.
 ## Open items
 
 1. 0.2.0 needs the owner's in-game check (`docs/TEST_PLAN.md` tests 29-35); slice 1 tests 1-16 are still unplayed.
-2. Owner to say: drop without silk touch (current) or silk touch only (`docs/TEST_PLAN.md` limit 1).
-3. Unchecked: sulfur cubes (26.x) swallowing glowing glass (shroomlight is on their list).
-4. The piston slide: during its 2 ticks the moving block may render as the carrier, depending on whether the moving
+2. Unchecked: sulfur cubes (26.x) swallowing glowing glass (shroomlight is on their list).
+3. The piston slide: during its 2 ticks the moving block may render as the carrier, depending on whether the moving
    piston renderer passes the destination position to the model (tests 25, 35). Fix only if the owner notices it.
-5. The owner's hand-drawn textures replace the drafts (same file names, 16 x 16, opaque).
-6. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
+4. Slice 3: redstone version on a redstone lamp; ask the owner for its recipe (kickoff suggests 8 glass around
    1 redstone dust). Chaining is its own slice after that, if still wanted.
-7. Other players' place sound for froglight and shroomlight colours is the carrier's (the server plays it before
+5. Other players' place sound for froglight and shroomlight colours is the carrier's (the server plays it before
    the record exists). Could be fixed by a client hook on the sound packet, or a plugin change; only if asked.
 
 ## Decisions already made (don't reopen without asking)
@@ -90,7 +89,7 @@ else sees the carrier.
 | Always on in v1; the redstone version (on a redstone lamp) is a later slice, chaining after that | Owner |
 | Carriers: white, light gray, gray, clear, cyan, light blue, blue on sea lantern; yellow and brown on ochre froglight; lime and green on verdant froglight; purple, magenta, pink on pearlescent froglight; red and orange on shroomlight | Owner, 2026-11-14 (brown on ochre froglight, not glowstone). Light colour is up to the player's shader, by block type |
 | Recipe: 8 glass of one colour around 1 glowstone dust -> 8; shaped; group `glowingglass`, building tab | Owner |
-| Look: frosted, lit from inside; textures hand-drawn by the owner (16 x 16, opaque, `glowing_<colour>_glass.png`), drafts until his arrive | Owner |
+| Textures: the owner's "redstone-recolor" set (`Claude outputs\glowing-glass\textures-16px\redstone-recolor\`), 16 x 16, opaque, `glowing_<colour>_glass.png` | Owner, 2026-11-14 (client 0.2.1); replaced the frosted drafts |
 | Placed blocks: a model swap through Fabric's renderer API (wrap the carriers' block state models after baking, emit our cube at marked positions), not an overlay | Kickoff: an overlay would sit on the carrier; the swap keeps the block a carrier to the game, so shaders still light it as one and it stays full bright |
 | Items: override the carriers' vanilla item definitions with a `select` on custom model data, vanilla fallback | Kickoff (Shulker Styles' trick); only marked items change |
 | The server sends each chunk's glowing glass unasked right after the chunk (`PlayerChunkLoadEvent`) to players whose mod said hello; the client asks only about chunks it had before the welcome, forgets on unload, clears everything on a level change; a pushed chunk re-meshes only the sections whose blocks changed (`setSectionDirtyWithNeighbors`) | Owner saw the carrier flash for a moment with query-on-load (0.1.0); a pushed answer arrives before the chunk is drawn |
@@ -100,7 +99,7 @@ else sees the carrier.
 | Item: carrier item, PDC `glowingglass:colour`, `item_name` "Glowing Blue Glass" (clear: "Glowing Glass"), custom model data string `glowingglass:blue` | Players without the mod see a named carrier; the mod's item definitions select on the string; an anvil name doesn't remove the colour |
 | Placed blocks: one record per chunk (PDC `glowingglass:glass`, all positions and colours), in memory while loaded, written on every change | Logic Blocks keeps per-block keys; one key per chunk keeps big floors compact |
 | A record counts only while its block is its carrier (or a moving piston block); stale records are dropped on chunk load or by `verify` | Commands and world editors change blocks without events |
-| Breaking drops one glowing glass whatever the tool (no silk touch); creative drops nothing | Kickoff (replace the carrier's drops). Flagged to the owner |
+| Breaking drops one glowing glass whatever the tool (no silk touch); creative drops nothing | Owner, 2026-11-14: keep it, no silk touch |
 | Explosions: glowing glass is taken out of the block list (HIGHEST) and broken by the plugin (MONITOR) with the explosion's yield | Vanilla merges identical drops from different blocks, so sea lantern crystals can't be told apart afterwards |
 | Pistons: records move at the piston event (MONITOR) by the piston's facing (retract: the opposite) | Covers slime/honey and chunk borders; the self-test proves them |
 | Other drops (breakNaturally, withers, `setblock destroy`): the first carrier drop at a glowing glass block becomes glowing glass, more are removed | Those drops spawn while the block is still there |
