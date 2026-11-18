@@ -7,6 +7,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,9 +23,10 @@ import java.util.function.Function;
 public final class Sounds {
     private Sounds() {}
 
-    public static SoundType at(BlockPos pos, SoundType original) {
+    /** Glass's sounds for {@code state} at {@code pos} if it's glowing glass (the block is that glass's carrier). */
+    public static SoundType at(BlockPos pos, BlockState state, SoundType original) {
         if (original == SoundType.GLASS || pos == null) return original;
-        return GlowingGlassClient.GLASS.at(pos.getX(), pos.getY(), pos.getZ()) != null ? SoundType.GLASS : original;
+        return Carriers.at(pos, state) != null ? SoundType.GLASS : original;
     }
 
     /** Froglight and shroomlight sounds, by id, to glass's matching sound. */

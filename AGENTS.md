@@ -41,12 +41,23 @@ else sees the carrier.
     `git checkout <commit> -- <file>` after). Don't leave `_old` copies in this folder: they ship in the mod jar.
 - `paper-selftest/`: development-only plugin that checks the plugin on a real Paper server.
 
-## Status (2026-11-15)
+## Status (2026-11-17)
+
+- **Plugin 0.3.1 + client 0.3.2: leftover marks** (owner: a crafting table broke with the glass sound at one spot,
+  after the Item Beacon's old build let the client place glowing glass that the server refused). Three fixes:
+  - Mod: a mark only counts while its block is that glass's carrier (`Carriers`): sounds (`Sounds.at` takes the
+    state) and the model (`GlassBlockModel`). `/glowingglassmod` names a leftover mark as ignored.
+  - Mod: every server block update (`ClientLevel.setServerVerifiedBlockState`, both block-update packets and the
+    answer to a predicted placement) drops a mark whose new block isn't its carrier (moving pistons excepted).
+  - Plugin: `Records.checked` drops stale records before a chunk is sent to a mod (`ClientBridge.sent`/`answer`),
+    never on change pushes (a piston event records glass at the destination before the blocks move).
+  - Self-test step "records: a chunk sent to a mod leaves out a block replaced without an event"; unit test
+    `GlassCacheTest.verifyDrops...`. Not yet seen in game (test 48).
 
 - **Client 0.3.1: "Glowing Glass" creative tab** (owner: glowing glass wasn't in creative search; slice 3 worked in
   his game). `CreativeTab.stack` builds each stack with exactly the plugin's three components; the self-test
   ("creative tab") rebuilds that JSON for all 32 and checks the server reads it as glowing glass and `isSimilar` to
-  a crafted one. Not yet seen in game (test 47).
+  a crafted one. Released as v0.3.0.
 
 - **Slice 3 done: redstone glowing glass** (plugin 0.3.0 + client 0.3.0, protocol 1 unchanged). v0.2.1 was released
   before it (owner tagged).
@@ -113,8 +124,7 @@ else sees the carrier.
 
 ## Open items
 
-1. Client 0.3.1 needs the owner's creative tab check (`docs/TEST_PLAN.md` test 47), then release v0.3.0 (plugin 0.3.0 +
-   client 0.3.1).
+1. Plugin 0.3.1 + client 0.3.2 need the owner's check (`docs/TEST_PLAN.md` test 48), then release v0.3.1.
 2. Possible slice 4: chaining (one powered redstone glowing glass lights its whole connected group), only if the owner
    still wants it after playing with slice 3.
 

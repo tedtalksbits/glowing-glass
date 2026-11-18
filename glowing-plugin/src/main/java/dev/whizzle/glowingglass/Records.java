@@ -28,7 +28,8 @@ import java.util.logging.Logger;
  * <p>
  * A record only counts while its block is still the colour's carrier (or a block being moved by a piston): anything
  * that replaces the block without an event the plugin sees (commands, world editors) leaves a stale record, which
- * reads as "not glowing glass" and is dropped by {@link #verify} or when the chunk next loads.
+ * reads as "not glowing glass" and is dropped by {@link #verify}, when the chunk is next sent to a mod
+ * ({@link #checked}) or when it next loads.
  */
 public final class Records implements Listener {
     public static final NamespacedKey KEY = new NamespacedKey("glowingglass", "glass");
@@ -80,6 +81,28 @@ public final class Records implements Listener {
     public ChunkGlass chunk(World w, int cx, int cz) {
         if (!w.isChunkLoaded(cx, cz)) return null;
         return chunks.computeIfAbsent(new ChunkId(w.getUID(), Chunk.getChunkKey(cx, cz)), id -> read(w.getChunkAt(cx, cz)));
+    }
+
+    /**
+     * Like {@link #chunk}, but first forgets records whose block is no longer their carrier (replaced by a command, a
+     * world editor or another plugin without an event), so the list sent to a mod has no leftovers. Only for sending a
+     * chunk as it is: not while a change is being made (a piston event records the glass at its destination before the
+     * blocks move there).
+     */
+    public ChunkGlass checked(World w, int cx, int cz) {
+        ChunkGlass g = chunk(w, cx, cz);
+        if (g == null || g.isEmpty()) return g;
+        List<Block> stale = new ArrayList<>();
+        for (var e : g.entries().entrySet()) {
+            int p = e.getKey();
+            Block b = w.getBlockAt((cx << 4) + ChunkGlass.x(p), ChunkGlass.y(p), (cz << 4) + ChunkGlass.z(p));
+            if (!holds(b, e.getValue())) stale.add(b);
+        }
+        if (!stale.isEmpty()) {
+            log.info("Forgot " + stale.size() + " glowing glass record(s) in chunk " + cx + "," + cz + " of " + w.getName() + ": those blocks were replaced.");
+            batch(() -> stale.forEach(this::remove));
+        }
+        return g;
     }
 
     private ChunkGlass glass(Block b) { return chunk(b.getWorld(), b.getX() >> 4, b.getZ() >> 4); }

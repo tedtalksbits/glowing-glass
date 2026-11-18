@@ -43,6 +43,8 @@ public final class ClientBridge implements PluginMessageListener, Listener {
         boolean sent(Player player, ChunkPos chunk);
         /** The chunk's glowing glass, or null if the chunk isn't loaded. */
         ChunkGlass glass(World world, ChunkPos chunk);
+        /** The same, leftovers dropped first: for sending a chunk as it is (not for pushing a change). */
+        default ChunkGlass checked(World world, ChunkPos chunk) { return glass(world, chunk); }
     }
 
     /** What one player's mod asked about. */
@@ -71,6 +73,7 @@ public final class ClientBridge implements PluginMessageListener, Listener {
         return new View() {
             @Override public boolean sent(Player player, ChunkPos chunk) { return player.isChunkSent(chunk.key()); }
             @Override public ChunkGlass glass(World world, ChunkPos chunk) { return records.chunk(world, chunk.x(), chunk.z()); }
+            @Override public ChunkGlass checked(World world, ChunkPos chunk) { return records.checked(world, chunk.x(), chunk.z()); }
         };
     }
 
@@ -135,7 +138,7 @@ public final class ClientBridge implements PluginMessageListener, Listener {
     void sent(Player p, ChunkPos pos) {
         Watch w = watches.get(p.getUniqueId());
         if (w == null || !w.modded || !w.world.equals(p.getWorld().getUID())) return;
-        ChunkGlass glass = view.glass(p.getWorld(), pos);
+        ChunkGlass glass = view.checked(p.getWorld(), pos);
         if (glass == null) return;
         w.queued.remove(pos.key());
         w.watched.add(pos.key());
@@ -150,7 +153,7 @@ public final class ClientBridge implements PluginMessageListener, Listener {
             it.remove();
             ChunkPos pos = ChunkPos.of(key);
             if (!view.sent(p, pos)) continue;
-            ChunkGlass glass = view.glass(p.getWorld(), pos);
+            ChunkGlass glass = view.checked(p.getWorld(), pos);
             if (glass == null) continue;
             w.watched.add(key);
             outbox.send(p, CHUNK, Protocol.chunk(pos, glass));

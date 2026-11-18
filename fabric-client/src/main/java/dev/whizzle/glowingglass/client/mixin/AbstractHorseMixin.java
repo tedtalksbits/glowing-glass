@@ -16,6 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 abstract class AbstractHorseMixin {
     @WrapOperation(method = "playStepSound", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getSoundType()Lnet/minecraft/world/level/block/SoundType;"))
     private SoundType glowingglass$stepSound(BlockState state, Operation<SoundType> original, @Local(argsOnly = true) BlockPos pos) {
-        return Sounds.at(pos, original.call(state));
+        return Sounds.at(pos, state, original.call(state));
     }
 }

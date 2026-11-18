@@ -35,7 +35,7 @@ by block type, so each colour sits on the vanilla light block closest to it:
 
 ## Status
 
-Plugin 0.3.0 and client mod 0.3.1, protocol 1. Slice 1 (server side), slice 2 (the mod) and slice 3 (redstone glowing
+Plugin 0.3.1 and client mod 0.3.2, protocol 1. Slice 1 (server side), slice 2 (the mod) and slice 3 (redstone glowing
 glass) are done; chaining (one powered block lighting its whole group) is a possible slice 4. See `AGENTS.md` and `docs/TEST_PLAN.md`.
 
 **With the mod** (`glowing-glass-client-<version>.jar` plus Fabric API in `.minecraft/mods`): placed glowing glass

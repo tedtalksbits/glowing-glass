@@ -54,6 +54,17 @@ public final class GlassCache {
         });
     }
 
+    /**
+     * Drops the mark at one block unless {@code holds} says its block is still that glass's carrier. Returns whether
+     * a mark was dropped.
+     */
+    public boolean verify(int x, int y, int z, java.util.function.Predicate<Glass> holds) {
+        Glass g = at(x, y, z);
+        if (g == null || holds.test(g)) return false;
+        unmark(x, y, z, g);
+        return true;
+    }
+
     public void forget(ChunkPos pos) { chunks.remove(pos.key()); }
 
     public void clear() { chunks.clear(); }

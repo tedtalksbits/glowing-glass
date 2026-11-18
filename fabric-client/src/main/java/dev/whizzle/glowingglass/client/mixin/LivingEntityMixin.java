@@ -18,6 +18,6 @@ abstract class LivingEntityMixin {
     private SoundType glowingglass$fallSound(BlockState state, Operation<SoundType> original) {
         LivingEntity self = (LivingEntity) (Object) this;
         BlockPos pos = new BlockPos(Mth.floor(self.getX()), Mth.floor(self.getY() - 0.2), Mth.floor(self.getZ()));
-        return Sounds.at(pos, original.call(state));
+        return Sounds.at(pos, state, original.call(state));
     }
 }

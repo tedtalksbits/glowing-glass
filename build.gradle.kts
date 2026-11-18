@@ -2,5 +2,5 @@ plugins { base }
 
 allprojects {
     group = "dev.whizzle.glowingglass"
-    version = "0.3.0"
+    version = "0.3.1"
 }

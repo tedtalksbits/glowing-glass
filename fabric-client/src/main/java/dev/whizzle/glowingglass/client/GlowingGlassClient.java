@@ -105,6 +105,9 @@ public final class GlowingGlassClient implements ClientModInitializer {
         if (!(mc.hitResult instanceof BlockHitResult hit) || hit.getType() != HitResult.Type.BLOCK) return;
         BlockPos p = hit.getBlockPos();
         Glass c = GLASS.at(p.getX(), p.getY(), p.getZ());
-        mc.player.sendSystemMessage(Component.literal("  Looking at: " + (c == null ? "not glowing glass" : c.itemName())));
+        String what = c == null ? "not glowing glass"
+            : mc.level != null && !Carriers.holds(c, mc.level.getBlockState(p)) ? "not glowing glass (a leftover " + c.itemName() + " mark, ignored)"
+            : c.itemName();
+        mc.player.sendSystemMessage(Component.literal("  Looking at: " + what));
     }
 }

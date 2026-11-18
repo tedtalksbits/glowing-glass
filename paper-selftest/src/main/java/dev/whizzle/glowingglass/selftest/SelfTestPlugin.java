@@ -248,6 +248,18 @@ public final class SelfTestPlugin extends JavaPlugin {
             records.verify(at(s + 1, 0));
             return all(before, noRecord(at(s + 1, 0)), recordIs(at(s, 0), Colour.CYAN));
         }));
+        steps.add(new Step("records: a chunk sent to a mod leaves out a block replaced without an event, and forgets it", () -> {
+            glass(s + 2, 0, Colour.RED).setType(Material.CRAFTING_TABLE);   // like /setblock over glowing glass
+        }, 1, () -> {
+            Block b = at(s + 2, 0);
+            Chunk c = b.getChunk();
+            ChunkGlass sent = records.checked(w, c.getX(), c.getZ());
+            Glass left = sent.get(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15));
+            byte[] saved = c.getPersistentDataContainer().get(Records.KEY, PersistentDataType.BYTE_ARRAY);
+            Glass leftSaved = saved == null ? null : ChunkGlass.load(saved).get(ChunkGlass.pack(b.getX() & 15, b.getY(), b.getZ() & 15));
+            return all(left == null ? null : "the list sent to mods still has a " + left + " on the crafting table",
+                noRecord(b), leftSaved == null ? null : "the saved chunk data still has it", recordIs(at(s, 0), Colour.CYAN));
+        }));
 
         // 3. Drops.
         int b1 = 30;

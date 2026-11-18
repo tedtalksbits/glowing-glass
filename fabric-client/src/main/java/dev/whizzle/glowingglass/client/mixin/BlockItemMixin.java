@@ -28,12 +28,12 @@ abstract class BlockItemMixin {
 
     @WrapOperation(method = "place", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;getSoundType()Lnet/minecraft/world/level/block/SoundType;"))
     private SoundType glowingglass$placeVolume(BlockState state, Operation<SoundType> original, @Local BlockPos pos) {
-        return Sounds.at(pos, original.call(state));
+        return Sounds.at(pos, state, original.call(state));
     }
 
     @WrapOperation(method = "place", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/BlockItem;getPlaceSound(Lnet/minecraft/world/level/block/state/BlockState;)Lnet/minecraft/sounds/SoundEvent;"))
     private SoundEvent glowingglass$placeSound(BlockItem self, BlockState state, Operation<SoundEvent> original, @Local BlockPos pos) {
         SoundType carrier = state.getSoundType();
-        return Sounds.at(pos, carrier) != carrier ? SoundType.GLASS.getPlaceSound() : original.call(self, state);
+        return Sounds.at(pos, state, carrier) != carrier ? SoundType.GLASS.getPlaceSound() : original.call(self, state);
     }
 }

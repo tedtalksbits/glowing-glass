@@ -66,4 +66,18 @@ class GlassCacheTest {
         c.mark(-20, 5, -20, on(Colour.CLEAR));
         assertEquals(Set.of(), c.update(new ChunkPos(-2, -2), glass(ChunkGlass.pack(12, 5, 12), Colour.CLEAR)), "the server confirms the mark: nothing to re-mesh");
     }
+
+    @Test void verifyDropsAMarkWhoseBlockIsNoLongerItsCarrier() {
+        GlassCache c = new GlassCache();
+        c.mark(5, 70, 5, on(Colour.LIGHT_BLUE));   // predicted; the server then refuses it
+        c.mark(6, 70, 5, on(Colour.RED));
+        assertFalse(c.verify(6, 70, 5, g -> true), "still its carrier: kept");
+        assertEquals(on(Colour.RED), c.at(6, 70, 5));
+        assertTrue(c.verify(5, 70, 5, g -> false), "the server put something else there: dropped");
+        assertNull(c.at(5, 70, 5));
+        assertEquals(on(Colour.RED), c.at(6, 70, 5), "the rest of the chunk is untouched");
+        assertFalse(c.verify(7, 70, 5, g -> false), "nothing marked: nothing to drop");
+        assertTrue(c.verify(6, 70, 5, on(Colour.BLUE)::equals), "a mark for another glass is dropped");
+        assertEquals(0, c.size());
+    }
 }

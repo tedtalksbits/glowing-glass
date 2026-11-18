@@ -1,6 +1,6 @@
 package dev.whizzle.glowingglass.client.render;
 
-import dev.whizzle.glowingglass.client.GlowingGlassClient;
+import dev.whizzle.glowingglass.client.Carriers;
 import dev.whizzle.glowingglass.model.Glass;
 import net.fabricmc.fabric.api.client.model.loading.v1.wrapper.WrapperBlockStateModel;
 import net.fabricmc.fabric.api.client.renderer.v1.mesh.QuadEmitter;
@@ -29,11 +29,11 @@ public final class GlassBlockModel extends WrapperBlockStateModel {
     }
 
     /**
-     * The glass cube to draw instead of the carrier, or null. A block sliding under a piston carries its glass; a
-     * redstone glass's cube follows its lamp's lit state.
+     * The glass cube to draw instead of the carrier, or null (also when the mark is for another carrier). A block
+     * sliding under a piston carries its glass; a redstone glass's cube follows its lamp's lit state.
      */
     private BlockStateModel at(BlockAndTintGetter level, BlockPos pos, BlockState state) {
-        Glass g = level instanceof MovingGlass moving ? moving.glowingglass$glass() : GlowingGlassClient.GLASS.at(pos.getX(), pos.getY(), pos.getZ());
+        Glass g = level instanceof MovingGlass moving ? moving.glowingglass$glass() : Carriers.at(pos, state);
         return g == null ? null : glass.apply(g, state);
     }
 
